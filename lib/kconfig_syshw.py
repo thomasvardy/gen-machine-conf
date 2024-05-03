@@ -60,6 +60,7 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\nmenu "Memory Settings"\n'
     confstr += 'choice\n'
     confstr += '\tprompt "Primary Memory"\n'
+    confstr += '\t@@DEFAULT_MEMBANK@@\n'
     confstr += '\thelp\n'
     confstr += '\tThe configuration in this menu impacts the\n'
     confstr += '\tmemory settings in the device tree autoconfig files.\n'
@@ -68,6 +69,8 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\tyou will need to specify base address and memory size.\n'
     confstr += '\tTo skip generating lower or upper memory node specify 0x0 offset to the memory size.\n'
     KconfPrefix = 'SUBSYSTEM_MEMORY'
+    DefaultBank = ''
+    DefaultBaseAddr = ''
     for slave in IpsToAdd:
         baseaddr = slavesdict[slave].get('baseaddr')
         if isinstance(baseaddr, int):
@@ -84,6 +87,10 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
         memKconf = '%s_%s' % (KconfPrefix, slave.upper())
         confstr += '\nconfig %s_SELECT\n' % memKconf
         confstr += '\tbool "%s"\n' % slave
+        # Check each IP baseaddr and use the lower one as default
+        if not DefaultBaseAddr or DefaultBaseAddr > baseaddr:
+            DefaultBaseAddr = baseaddr
+            DefaultBank = 'default %s_SELECT\n' % memKconf
 
         memoryconfstr += '\nconfig %s_BASEADDR\n' % memKconf
         memoryconfstr += '\thex "System memory base address"\n'
@@ -130,6 +137,7 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\nconfig %s_MANUAL_SELECT\n' % KconfPrefix
     confstr += '\tbool "manual"\n'
     confstr += '\nendchoice\n'
+    confstr = confstr.replace('@@DEFAULT_MEMBANK@@', DefaultBank)
 
     memoryconfstr += '\nconfig %s_MANUAL_LOWER_BASEADDR\n' % KconfPrefix
     memoryconfstr += '\thex "Lower memory base address"\n'
