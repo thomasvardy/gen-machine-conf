@@ -63,13 +63,6 @@
     },
     "xilinx-zc1751-dc1": {
     },
-    "xilinx-ultra96-reva": {
-        "extra-yocto-vars": [
-            "KERNEL_DEVICETREE = \"xilinx/zynqmp-zcu100-revC.dtb\"",
-            "YAML_COMPILER_FLAGS:append = \" -DBOARD_SHUTDOWN_PIN=2 -DBOARD_SHUTDOWN_PIN_STATE=0 \"",
-            "MACHINE_ESSENTIAL_EXTRA_RDEPENDS:append = \" linux-firmware-wl18xx linux-firmware-ti-bt-wl180x\""
-        ]
-    },
     "xilinx-vc-p-a2197-00": {
     },
     "xilinx-vck190": {
