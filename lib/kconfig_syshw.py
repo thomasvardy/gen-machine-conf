@@ -33,6 +33,11 @@ def GenConf_processor(procdata):
         confstr += '\nconfig %s%s_IP_NAME\n' % (KconfStr, index)
         confstr += '\tstring\n'
         confstr += '\tdefault %s\n' % proc
+        instance_path = procdata[proc].get('instance_path')
+        if instance_path:
+            confstr += '\nconfig %s%s_INSTANCE_PATH\n' % (KconfStr, index)
+            confstr += '\tstring\n'
+            confstr += '\tdefault %s\n' % instance_path
         Kprocselect = '%s_%s_SELECT' % (KconfStr, proc)
         procconfstr += '\nconfig %s\n' % Kprocselect
         procconfstr += '\tbool "%s"\n' % proc
@@ -212,6 +217,11 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             serial_Kconf, comp.upper())
         serialconfstr += '\tstring\n'
         for slave in IpsToAdd + ['manual']:
+            if comp in ['PLM', 'PMUFW'] and re.search(
+                    r'.*coresight.*', slave.replace('_', '')):
+                # coresight ip is not supported for plm and pmufw
+                # so skipping in displaying menuconfig
+                continue
             confstr += '\nconfig SUBSYSTEM_%sSERIAL_%s_SELECT\n' % (
                 '%s_' % comp if comp != 'DTG' else '', slave.upper())
             confstr += '\tbool "%s"\n' % slave

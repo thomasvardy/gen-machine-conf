@@ -17,6 +17,7 @@ import project_config
 import post_process_config
 import rootfs_config
 import subprocess
+import kconfig_syshw
 
 logger = logging.getLogger('Gen-Machineconf')
 
@@ -73,11 +74,16 @@ def GetSocInfo(hw_file):
 
 def GenXsctSystemHwFile(genmachine_scripts,
                         Kconfig_syshw, hw_file, output):
+    ipinfo_schema = os.path.join(
+        genmachine_scripts, 'data', 'ipinfo.yaml')
+    plnx_syshw_file = os.path.join(output, 'plnx_syshw_data')
+
     logger.info('Generating Kconfig for project')
-    cmd = 'xsct -sdx -nodisp %s/hw-description.tcl plnx_gen_hwsysconf %s %s' % \
-        (genmachine_scripts, hw_file, Kconfig_syshw)
+    cmd = 'xsct -sdx -nodisp %s/hw-description.tcl plnx_gen_hwsysconf %s' % \
+        (genmachine_scripts, hw_file)
     logger.debug('Generating System HW file')
     common_utils.RunCmd(cmd, output, shell=True)
+    kconfig_syshw.GenKconfigSysHW(plnx_syshw_file, ipinfo_schema, Kconfig_syshw)
     if not os.path.exists(Kconfig_syshw):
         raise Exception('Failed to Generate Kconfig_syshw File')
 
