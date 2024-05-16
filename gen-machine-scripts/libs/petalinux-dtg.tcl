@@ -260,7 +260,6 @@ proc gen_spi_flash_node {fid machine_dtsi} {
 	set cpu_arch [get_sw_proc_arch $target_cpu]
 	if {$cpu_arch == "microblaze"} {
 		set flash_inst_name [dict get $kconfig_dict flash inst_name]
-		set flash_bank [dict get $kconfig_dict flash bank]
 		set ip_obj [hsi get_cells -hier $flash_inst_name]
 		set prop_rt_code [catch {hsi get_property CONFIG.C_SCK_RATIO $ip_obj}]
 
