@@ -4784,18 +4784,18 @@ config xrt-dbg
 
 endmenu
 
-menu "zocl"
-config zocl
-	bool "zocl"
+menu "kernel-module-zocl"
+config kernel-module-zocl
+	bool "kernel-module-zocl"
 	help
 	Zynq Opencl Library
 
-config zocl-dev
-	bool "zocl-dev"
+config kernel-module-zocl-dev
+	bool "kernel-module-zocl-dev"
 	help
 
-config zocl-dbg
-	bool "zocl-dbg"
+config kernel-module-zocl-dbg
+	bool "kernel-module-zocl-dbg"
 	help
 
 endmenu
@@ -9374,7 +9374,7 @@ config packagegroup-petalinux-vitis-acceleration-essential
          help
          Includes packages for Vitis compatible platforms
 		xrt
-                zocl
+                kernel-module-zocl
                 opencl-headers
                 packagegroup-petalinux-opencv
                 packagegroup-petalinux-x11
