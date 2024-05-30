@@ -29,7 +29,7 @@ global exc_backtrace
 exc_backtrace = False
 
 # Validate the hw_description given and justify xsct/sdt flow.
-def validate_hwfile(hw_description):
+def validate_hwfile(hw_description, subparser=None):
     if not os.path.exists(hw_description):
         raise Exception('Given path does not exists: %s' % hw_description)
     elif os.path.isfile(hw_description):
@@ -37,24 +37,35 @@ def validate_hwfile(hw_description):
         if hw_ext != '.xsa':
             raise Exception('Only .xsa files are supported given %s' % hw_ext)
         hw_ext = 'xsct'
+        hw_file = hw_description
     elif os.path.isdir(hw_description):
-        sdtfiles = []
-        for file in os.listdir(hw_description):
-            if file.endswith('.dts'):
-                sdtfiles.append(file)
-        if not sdtfiles:
-            raise Exception('No .dts file found in given directory %s' %
-                         hw_description)
-        if len(sdtfiles) > 1:
-            raise Exception(
-                'More than one .dts files found in given directory %s' % hw_description)
-        hw_ext = 'sdt'
-        hw_description = os.path.join(hw_description, sdtfiles[0])
+        XsaFiles = SDTFiles = []
+        if subparser != 'parse-sdt':
+            XsaFiles = common_utils.GetFilesFromDir(hw_description, '.xsa')
+        if subparser != 'parse-xsa':
+            SDTFiles = common_utils.GetFilesFromDir(hw_description, 'system-top.dts')
+        if not XsaFiles and not SDTFiles:
+            raise Exception('No .xsa or system-top.dts file found in specified directory %s' % hw_description)
+        elif len(XsaFiles) > 1:
+            raise Exception('More than one .xsa files found in specified directory %s' % hw_description)
+        elif len(SDTFiles) > 1:
+            raise Exception('More than one system-top.dts files found in specified directory %s' % hw_description)
+        elif XsaFiles and SDTFiles:
+            logger.info('Both .xsa and .dts files found in specified directory %s' % hw_description)
+            logger.info('Using system-top.dts file as default %s' % SDTFiles[0])
+            hw_ext = 'sdt'
+            hw_file = SDTFiles[0]
+        elif XsaFiles:
+            hw_ext = 'xsct'
+            hw_file = XsaFiles[0]
+        elif SDTFiles:
+            hw_ext = 'sdt'
+            hw_file = SDTFiles[0]
     else:
         raise Exception(
-            'Only .xsa file or System Device-tree directory supported.')
-    hw_description = os.path.abspath(hw_description)
-    return hw_ext, hw_description
+           'Only .xsa file or System Device-tree directory supported.')
+    logger.info('Using HW file: %s' % hw_file)
+    return hw_ext, hw_file
 
 
 def main():
@@ -68,7 +79,7 @@ def main():
 
     required_args.add_argument('--hw-description', metavar='[<PATH_TO_XSA>/<xsa_name>.xsa] or <PATH_TO_SDTDIR>',
                                help='Specify Hardware(xsa) file or System Device-tree Directory',
-                               type=os.path.realpath)
+                               )
     optional_args.add_argument('--soc-family', metavar='',
                                choices=['microblaze', 'zynq',
                                         'zynqmp', 'versal'],
@@ -149,18 +160,23 @@ def main():
         parser.error('The following arguments are required: %s' %
                      '--hw-description')
 
-    if not parserhelp:
-        # Validate the given hw_description and get xsct/sdt
-        global_args.hw_flow, global_args.hw_file = validate_hwfile(global_args.hw_description)
-    
+
     # Default option for subparsers is not supported yet in python
     # If user not specified any subparser use the default parser based on the hw_description provided.
     # Get the registed parsers list from subparsers and check with the unparsed_args.
     _hassubcommand = False
+    _subparser = None
     for subcmd in subparsers.choices:
         if subcmd in unparsed_args:
             _hassubcommand = True
+            _subparser = subcmd
             break
+
+    if not parserhelp:
+        hw_dir = common_utils.FetchAndUnpackURI(global_args.hw_description)
+        # Validate the given hw_description and get xsct/sdt
+        global_args.hw_flow, global_args.hw_file = validate_hwfile(hw_dir, _subparser)
+
     if not _hassubcommand and not parserhelp:
         unparsed_args.insert(0, 'parse-xsa' if global_args.hw_flow == 'xsct' else 'parse-sdt')
     

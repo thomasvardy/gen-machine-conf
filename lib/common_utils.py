@@ -384,6 +384,18 @@ def ReadYaml(yamlfile):
             raise Exception(exc)
 
 
+def GetFilesFromDir(dirpath, file_ext=''):
+    '''Search the nested directories for the file ext if provided'''
+    FilesList = []
+    for path, dirs, files in os.walk(dirpath):
+        for _file in files:
+            if file_ext and _file.endswith(file_ext):
+                FilesList.append(os.path.join(path, _file))
+            if not file_ext:
+                FilesList.append(os.path.join(path, _file))
+    return FilesList
+
+
 def GetLopperUtilsPath():
     lopper = check_tool('lopper',
                    'esw-conf-native',
@@ -439,6 +451,48 @@ HaveBitbake.have_bitbake = None
 
 HaveBitbake.tinfoil = None
 HaveBitbake.tinfoil_recipe = False
+
+
+def FetchAndUnpackURI(uri):
+    ''' Use bb.fetch2.Fetch to download the specified URL's
+    and unpack to TOPDIR/hw-description if bitbake found.'''
+    if not HaveBitbake():
+        '''Return the same uri if no bitbake'''
+        return uri
+
+    if os.path.exists(uri):
+        # Add file:// prefix if its local file
+        uri = 'file://%s' % os.path.abspath(uri)
+
+    InitBitbake(False)
+    d = HaveBitbake.tinfoil.config_data
+    localdata = d.createCopy()
+    # BB_STRICT_CHECKSUM - To skip the checksum for network files
+    localdata.setVar('BB_STRICT_CHECKSUM', 'ignore')
+    # PREMIRRORS,MIRRORS - Skip fetching from MIRRORS
+    localdata.setVar('PREMIRRORS', '')
+    localdata.setVar('MIRRORS', '')
+    fetcher = bb.fetch2.Fetch([uri], localdata)
+    fetcher.download()
+
+    # Unpack to hw-description
+    hw_dir = os.path.join(localdata.getVar('TOPDIR'), 'hw-description')
+    RemoveDir(hw_dir)
+    CreateDir(hw_dir)
+    fetcher.unpack(hw_dir)
+
+    # Get the S from url if exists, Helps if the specified path or url has multiple
+    # SDT/XSA directories user can specify sub source directory. similar to
+    # S variable in bb files.
+    s_dir = ''
+    for url in fetcher.urls:
+        s_dir = fetcher.ud[url].parm.get('S')
+
+    if s_dir:
+        return os.path.join(hw_dir, s_dir)
+    else:
+        return hw_dir
+
 
 def GetBitbakeVars(variables, recipe=None):
     '''Return back the values of bitbake variables with an optional recipe'''
