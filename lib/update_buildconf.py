@@ -93,9 +93,9 @@ def AddUserLayers(args):
                 layers_list_f.write(layer + '\n')
 
     for layer in remove_layers:
-        cmd = 'sed -i "\|%s|d"  "%s"' % (layer, layers_list)
+        cmd = r'sed -i "\|%s|d"  "%s"' % (layer, layers_list)
         common_utils.RunCmd(cmd, os.getcwd(), shell=True)
-        cmd = 'sed -i "\|%s|d"  "%s/conf/bblayers.conf"' % (layer, builddir)
+        cmd = r'sed -i "\|%s|d"  "%s/conf/bblayers.conf"' % (layer, builddir)
         common_utils.RunCmd(cmd, os.getcwd(), shell=True)
 
 
