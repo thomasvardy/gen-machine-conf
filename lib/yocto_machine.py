@@ -67,8 +67,78 @@ def GetTuneFeatures(soc_family, system_conffile):
 
 
 def YoctoCommonConfigs(args, arch, system_conffile):
-    machine_features = ''
     machine_override_string = ''
+    if arch == 'aarch64':
+        baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
+                                               system_conffile, 'asterisk', '_BASEADDR=')
+        machine_override_string += '\n# Yocto arm-trusted-firmware(TF-A) variables\n'
+        atf_serial_ip_name = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_TF-A_IP_NAME',
+                                                         system_conffile)
+        atf_serial_manual = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_SERIAL_MANUAL_SELECT',
+                                                        system_conffile)
+        if not atf_serial_manual:
+            machine_override_string += 'ATF_CONSOLE ?= "%s"\n' % atf_serial_ip_name
+        atf_mem_settings = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEMORY_SETTINGS',
+                                                       system_conffile)
+        atf_mem_base = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEM_BASE',
+                                                   system_conffile)
+        atf_mem_size = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEM_SIZE',
+                                                   system_conffile)
+        if atf_mem_settings:
+            machine_override_string += 'ATF_MEM_BASE ?= "%s"\n' % atf_mem_base
+            machine_override_string += 'ATF_MEM_SIZE ?= "%s"\n' % atf_mem_size
+
+        atf_extra_settings = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_EXTRA_COMPILER_FLAGS',
+                                                         system_conffile)
+        memory = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
+                                            'choice', '_SELECT=y')
+        atf_bl33_offset = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_%s_U__BOOT_TEXTBASE_OFFSET' % memory,
+                                                     system_conffile)
+        if atf_extra_settings:
+            machine_override_string += 'EXTRA_OEMAKE:append:pn-arm-trusted-firmware'\
+                                       ' = " %s"\n' % atf_extra_settings
+        if atf_bl33_offset:
+            machine_override_string += 'TFA_BL33_LOAD ?= "%s"\n' % atf_bl33_offset
+
+    ddr_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
+                                               'asterisk', '_BASEADDR=')
+    if not ddr_baseaddr:
+        ddr_baseaddr = '0x0'
+    machine_override_string += '\n# Set DDR Base address for u-boot-xlnx-scr '\
+                               'variables\n'
+    machine_override_string += 'DDR_BASEADDR ?= "%s"\n' % ddr_baseaddr
+    skip_append_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_APPEND_BASEADDR',
+                                                       system_conffile)
+    if skip_append_baseaddr:
+        machine_override_string += 'SKIP_APPEND_BASEADDR ?= "0"\n'
+    else:
+        machine_override_string += 'SKIP_APPEND_BASEADDR ?= "1"\n'
+
+    machine_override_string += '\n# Yocto KERNEL Variables\n'
+    # Additional kernel make command-line arguments
+    if args.soc_family == 'microblaze':
+        kernel_loadaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
+                                                      system_conffile, 'asterisk', '_BASEADDR=')
+    else:
+        kernel_baseaddr = '0x0'
+        kernel_offset = '0x200000'
+        kernel_loadaddr = hex(int(kernel_baseaddr, 16) +
+                            int(kernel_offset, 16))
+        kernel_loadaddr = '0x%s' % kernel_loadaddr[2:].upper()
+    if kernel_loadaddr and int(kernel_loadaddr, 16) >> 32:
+        MSB = '0x%s' % hex(int(kernel_loadaddr, 16) >> 32)[2:].upper()
+        LSB = '0x%s' % hex(int(kernel_loadaddr, 16) & 0x0ffffffff)[2:].upper()
+        loadaddr = '%s %s' % (MSB, LSB)
+    else:
+        loadaddr = kernel_loadaddr
+
+    machine_override_string += 'UBOOT_ENTRYPOINT  ?= "%s"\n' % loadaddr
+    machine_override_string += 'UBOOT_LOADADDRESS ?= "%s"\n' % loadaddr
+
+    if arch != 'aarch64':
+        machine_override_string += 'KERNEL_EXTRA_ARGS += "UIMAGE_LOADADDR=${UBOOT_ENTRYPOINT}"\n'
+
+    machine_features = ''
     is_fpga_manager = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
     if is_fpga_manager == 'y':
@@ -133,38 +203,6 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
                                                system_conffile)
     if uboot_config and uboot_config.lower() != 'auto':
         machine_override_string += 'UBOOT_MACHINE ?= "%s"\n' % uboot_config
-
-    if arch == 'aarch64':
-        baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
-                                               system_conffile, 'asterisk', '_BASEADDR=')
-        machine_override_string += '\n# Yocto arm-trusted-firmware(TF-A) variables\n'
-        atf_serial_ip_name = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_TF-A_IP_NAME',
-                                                         system_conffile)
-        atf_serial_manual = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_SERIAL_MANUAL_SELECT',
-                                                        system_conffile)
-        if not atf_serial_manual:
-            machine_override_string += 'ATF_CONSOLE ?= "%s"\n' % atf_serial_ip_name
-        atf_mem_settings = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEMORY_SETTINGS',
-                                                       system_conffile)
-        atf_mem_base = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEM_BASE',
-                                                   system_conffile)
-        atf_mem_size = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEM_SIZE',
-                                                   system_conffile)
-        if atf_mem_settings:
-            machine_override_string += 'ATF_MEM_BASE ?= "%s"\n' % atf_mem_base
-            machine_override_string += 'ATF_MEM_SIZE ?= "%s"\n' % atf_mem_size
-
-        atf_extra_settings = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_EXTRA_COMPILER_FLAGS',
-                                                         system_conffile)
-        memory = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
-                                            'choice', '_SELECT=y')
-        atf_bl33_offset = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_%s_U__BOOT_TEXTBASE_OFFSET' % memory,
-                                                     system_conffile)
-        if atf_extra_settings:
-            machine_override_string += 'EXTRA_OEMAKE:append:pn-arm-trusted-firmware'\
-                                       ' = " %s"\n' % atf_extra_settings
-        if atf_bl33_offset:
-            machine_override_string += 'TFA_BL33_LOAD ?= "%s"\n' % atf_bl33_offset
 
     if soc_family == 'versal':
         machine_override_string += '\n# Yocto PLM variables\n'
@@ -232,30 +270,6 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
                                                         system_conffile)
         machine_override_string += 'XSCTH_PROC:pn-fs-boot ?= "%s"\n' % processor_ip_name
 
-    machine_override_string += '\n# Yocto KERNEL Variables\n'
-    # Additional kernel make command-line arguments
-    if soc_family == 'microblaze':
-        kernel_loadaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
-                                                      system_conffile, 'asterisk', '_BASEADDR=')
-    else:
-        kernel_baseaddr = '0x0'
-        kernel_offset = '0x200000'
-        kernel_loadaddr = hex(int(kernel_baseaddr, 16) +
-                            int(kernel_offset, 16))
-        kernel_loadaddr = '0x%s' % kernel_loadaddr[2:].upper()
-    if kernel_loadaddr and int(kernel_loadaddr, 16) >> 32:
-        MSB = '0x%s' % hex(int(kernel_loadaddr, 16) >> 32)[2:].upper()
-        LSB = '0x%s' % hex(int(kernel_loadaddr, 16) & 0x0ffffffff)[2:].upper()
-        loadaddr = '%s %s' % (MSB, LSB)
-    else:
-        loadaddr = kernel_loadaddr
-
-    machine_override_string += 'UBOOT_ENTRYPOINT  ?= "%s"\n' % loadaddr
-    machine_override_string += 'UBOOT_LOADADDRESS ?= "%s"\n' % loadaddr
-
-    if arch != 'aarch64':
-        machine_override_string += 'KERNEL_EXTRA_ARGS += "UIMAGE_LOADADDR=${UBOOT_ENTRYPOINT}"\n'
-
     serialname = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_', system_conffile,
                                              'choice', '_SELECT=y')
     if serialname != 'MANUAL':
@@ -291,19 +305,6 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
         machine_override_string += 'YAML_SERIAL_CONSOLE_BAUDRATE ?= "%s"\n' \
                                    % baudrate
 
-    ddr_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
-                                               'asterisk', '_BASEADDR=')
-    if not ddr_baseaddr:
-        ddr_baseaddr = '0x0'
-    machine_override_string += '\n# Set DDR Base address for u-boot-xlnx-scr '\
-                               'variables\n'
-    machine_override_string += 'DDR_BASEADDR ?= "%s"\n' % ddr_baseaddr
-    skip_append_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_APPEND_BASEADDR',
-                                                       system_conffile)
-    if skip_append_baseaddr:
-        machine_override_string += 'SKIP_APPEND_BASEADDR ?= "0"\n'
-    else:
-        machine_override_string += 'SKIP_APPEND_BASEADDR ?= "1"\n'
     # Variables that changes based on hw design or board specific requirement must be
     # defined before calling the required inclusion file else pre-expansion value
     # defined in respective generic machine conf will be set.
@@ -354,9 +355,6 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
         MultiConfDict.get('LinuxDT'))
     machine_override_string += 'CONFIG_DTFILE[vardepsexclude] += "CONFIG_DTFILE_DIR"\n'
 
-    machine_override_string += '\n# Required generic machine inclusion\n'
-    machine_override_string += 'require conf/machine/%s.conf\n' % \
-        req_conf_file
     machine_override_string += '\n# System Device Tree does not use HDF_MACHINE\n'
     machine_override_string += 'HDF_MACHINE = ""\n'
 
@@ -446,6 +444,10 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += 'IMAGE_BOOT_FILES =+ "devicetree/${@os.path.basename(d.getVar(\'CONFIG_DTFILE\').replace(\'.dts\', \'.dtb\'))}"\n'
 
     machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
+
+    machine_override_string += '\n# Required generic machine inclusion\n'
+    machine_override_string += 'require conf/machine/%s.conf\n' % \
+        req_conf_file
 
     return machine_override_string
 
