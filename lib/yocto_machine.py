@@ -329,7 +329,7 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
 
     if soc_variant == 'ev' and soc_family == 'zynqmp':
         machine_override_string += '\n# Yocto IMAGE_FEATURES Variable\n'
-        machine_override_string += 'MACHINE_HWCODECS = "libomxil-xlnx"\n'
+        machine_override_string += 'MACHINE_HWCODECS = "libvcu-omxil"\n'
         machine_override_string += 'IMAGE_FEATURES += "hwcodecs"\n'
 
     machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
