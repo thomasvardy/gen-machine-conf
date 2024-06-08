@@ -456,8 +456,8 @@ HaveBitbake.tinfoil_recipe = False
 def FetchAndUnpackURI(uri):
     ''' Use bb.fetch2.Fetch to download the specified URL's
     and unpack to TOPDIR/hw-description if bitbake found.'''
-    if not HaveBitbake():
-        '''Return the same uri if no bitbake'''
+    if not HaveBitbake() or os.environ.get('PETALINUX'):
+        '''Return the same uri if no bitbake or PETALINUX evironment'''
         return uri
 
     if os.path.exists(uri):
