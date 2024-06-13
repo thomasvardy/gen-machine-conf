@@ -86,7 +86,7 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
         if not baseaddr or not highaddr:
             logger.warning('No memory base address and high address is provided for %s' % slave)
             continue
-        banksize = hex(int(highaddr, base=16) - int(baseaddr, base=16))
+        banksize = hex((int(highaddr, base=16) - int(baseaddr, base=16)) + 0x01)
         if not int(banksize, base=16) >= 0x2000000:
             continue
         memKconf = '%s_%s' % (KconfPrefix, slave.upper())
