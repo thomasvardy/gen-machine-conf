@@ -231,14 +231,18 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             if comp == 'TF-A':
                 ip_name = slavesdict[slave].get('ip_name')
                 if ip_name == 'psu_uart':
-                    if re.search(r'.*uart0.*', slave.replace('_', '')):
+                    if re.search(r'.*uart0.*', slave.replace('_', '')) or \
+                            re.search(r'.*serial0.*', slave.replace('_', '')):
                         serialconsole = 'cadence'
-                    elif re.search(r'.*uart1.*', slave.replace('_', '')):
+                    elif re.search(r'.*uart1.*', slave.replace('_', '')) or \
+                            re.search(r'.*serial1.*', slave.replace('_', '')):
                         serialconsole = 'cadence1'
                 elif ip_name in ['psv_sbsauart', 'psx_sbsauart']:
-                    if re.search(r'.*uart0.*', slave.replace('_', '')):
+                    if re.search(r'.*uart0.*', slave.replace('_', '')) or \
+                            re.search(r'.*serial0.*', slave.replace('_', '')):
                         serialconsole = 'pl011'
-                    elif re.search(r'.*uart1.*', slave.replace('_', '')):
+                    elif re.search(r'.*uart1.*', slave.replace('_', '')) or \
+                            re.search(r'.*serial1.*', slave.replace('_', '')):
                         serialconsole = 'pl011_1'
                 else:
                     serialconsole = 'dcc'
