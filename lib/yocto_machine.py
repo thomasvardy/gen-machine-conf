@@ -66,6 +66,31 @@ def GetTuneFeatures(soc_family, system_conffile):
     return ' '.join(tune_features)
 
 
+Machinefeaturesdict = {
+    'vdu': 'vdu',
+    'vcu': 'vcu',
+    'ai_engine': 'aie',
+    'psu_gpu': 'mali400'
+}
+
+
+def GetMachineFeatures(args, system_conffile):
+    machine_features = ''
+    is_fpga_manager = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
+    if is_fpga_manager == 'y':
+        machine_features += ' fpga-overlay'
+
+    if args.soc_variant == 'dr':
+        machine_features += ' rfsoc'
+
+    for ip_name in Machinefeaturesdict.keys():
+        if CheckIP(ip_name, system_conffile):
+            machine_features += ' %s' % Machinefeaturesdict[ip_name]
+
+    return machine_features
+
+
 def YoctoCommonConfigs(args, arch, system_conffile):
     machine_override_string = ''
     if arch == 'aarch64':
@@ -138,15 +163,8 @@ def YoctoCommonConfigs(args, arch, system_conffile):
     if arch != 'aarch64':
         machine_override_string += 'KERNEL_EXTRA_ARGS += "UIMAGE_LOADADDR=${UBOOT_ENTRYPOINT}"\n'
 
-    machine_features = ''
-    is_fpga_manager = common_utils.GetConfigValue(
-        'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
-    if is_fpga_manager == 'y':
-        machine_features = ' fpga-overlay'
 
-    if CheckIP('vdu', system_conffile):
-        machine_features += ' vdu'
-
+    machine_features = GetMachineFeatures(args, system_conffile)
     if machine_features:
         machine_override_string += '\n# Yocto MACHINE_FEATURES Variable\n'
         machine_override_string += 'MACHINE_FEATURES += "%s"\n' % (
