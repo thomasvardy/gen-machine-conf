@@ -452,6 +452,9 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     return machine_override_string
 
 
+YoctoGenericMachines = ('microblaze-generic', 'zynq-generic',
+                        'zynqmp-generic','versal-generic', 'versal-net-generic')
+
 def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict=''):
     genmachine_scripts = project_config.GenMachineScriptsPath()
     if not os.path.isfile(system_conffile):
@@ -468,33 +471,21 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
     plnx_syshw_file_f.close()
 
     # Get the device_id from plnx_syshw_data
-    device_id = ''
+    device_id = '999'
     if 'device_id' in plnx_syshw_data.keys():
         device_id = plnx_syshw_data['device_id']
-
-    soc_variant = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_VARIANT_%s'
-                                              % soc_family.upper(),
-                                              system_conffile, 'choice').lower()
 
     # Include user given machine if INCLUDE_MACHINE_NAME set
     req_conf_file = common_utils.GetConfigValue('CONFIG_YOCTO_INCLUDE_MACHINE_NAME',
                                                 system_conffile)
 
-    # Include soc_variant specific generic machine if soc_variant found
-    # if not, include soc_family machine file.
+    # include soc_family machine file if user not specified.
     if not req_conf_file:
-        if soc_variant:
-            req_conf_file = '%s-%s-generic' % (soc_family, soc_variant)
-        else:
-            req_conf_file = '%s-generic' % (soc_family)
+        req_conf_file = '%s-generic' % (soc_family)
+        # include versal net if soc_Variant is net
+        if soc_family == 'versal' and args.soc_variant == 'net':
+            req_conf_file = '%s-net-generic' % (soc_family)
 
-    # Machine conf json file
-    import json
-    machinejson_file = os.path.join(
-        genmachine_scripts, 'data', 'machineconf.json')
-    if not os.path.isfile(machinejson_file):
-        raise Exception('Machine json file doesnot exist at: %s' %
-                     machinejson_file)
     # Get the machine file name from sys config
     yocto_machine_name = common_utils.GetConfigValue('CONFIG_YOCTO_MACHINE_NAME',
                                                      system_conffile)
@@ -502,27 +493,13 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
                                               system_conffile)
     # Use the sysconfig machine name as yocto machine
     machine_conf_file = yocto_machine_name
-    json_yocto_vars = ''
-    # Parse json to string
-    with open(machinejson_file, 'r') as data_file:
-        machinejson_data = json.load(data_file)
-    data_file.close()
 
-    # Get optional machine name from sysconfig and check with json
-    if yocto_machine_name and yocto_machine_name in machinejson_data.keys():
-        if 'extra-yocto-vars' in machinejson_data[machine_conf_file].keys():
-            json_yocto_vars = '\n'.join(var for var in
-                                        machinejson_data[machine_conf_file]['extra-yocto-vars'])
-    else:
-        # Check if machine name from sysconfig is generic machine
-        # or machine_name and include_machine_name is same then
-        # Append device_id/999 to yocto_machine_name
-        if machine_conf_file in machinejson_data['generic-machines'] \
-                or machine_conf_file == req_conf_file:
-            if device_id:
-                machine_conf_file += '-' + device_id
-            else:
-                machine_conf_file += '-999'
+    # Check if machine name from sysconfig is generic machine
+    # or machine_name and include_machine_name is same then
+    # Append device_id/999 to yocto_machine_name
+    if machine_conf_file in YoctoGenericMachines or machine_conf_file == req_conf_file:
+        machine_conf_file += '-' + device_id
+
     machine_conf_dir = os.path.join(args.config_dir, 'machine')
     common_utils.CreateDir(machine_conf_dir)
     machine_conf_file = machine_conf_file.lower()
@@ -562,11 +539,6 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
                                "'${MACHINE}']}"'"\n'\
                                % (machine_conf_file, machine_conf_file)
     machine_override_string += '#### Regular settings follow\n'
-
-    # Update machine conf file with yocto variabls from json file
-    if json_yocto_vars:
-        machine_override_string += '\n# Machine specific yocto variables\n'
-        machine_override_string += '%s\n' % json_yocto_vars
 
     if args.hw_flow == 'xsct':
         machine_override_string += YoctoXsctConfigs(args, arch, dtg_machine,

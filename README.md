@@ -158,8 +158,6 @@ options:
 $
 ```
 
-> **NOTE:** You can find the default BSP machine conf file names at `<gen-machine-conf>/gen-machine-scripts/data/machineconf.json`
-
 * MicroBlaze:
 
 ```bash
