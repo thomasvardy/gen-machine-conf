@@ -311,7 +311,10 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
         serial_no = ''
         if no_alias == 'y':
             if "_" in serialname:
-                serial_no = serialname.lower().split(serialipname + '_')[1]
+                try:
+                    serial_no = serialname.lower().split(serialipname + '_')[1]
+                except IndexError:
+                    serial_no = re.findall('[0-9]+', serialname)[0]
                 serial_console = serial_console[:-1]
                 serial_console = serial_console + serial_no
             else:

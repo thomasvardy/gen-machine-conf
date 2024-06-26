@@ -141,7 +141,10 @@ def GetSysConsoleBootargs(system_conffile, soc_family, soc_variant):
     serial_no = ''
     if no_alias == 'y':
         if "_" in serialname:
-            serial_no = serialname.lower().split(serialipname + '_')[1]
+            try:
+                serial_no = serialname.lower().split(serialipname + '_')[1]
+            except IndexError:
+                 serial_no = re.findall('[0-9]+', serialname)[0]
         else:
             tmp = re.findall('[0-9]+', serialname)
             serial_no = tmp[0]
