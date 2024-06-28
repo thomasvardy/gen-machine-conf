@@ -212,9 +212,12 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             confstr += '\tYAML_SERIAL_CONSOLE_STDIN:forcevariable:pn-<recipename> = "<serial_ipname>"\n'
             confstr += '\tYAML_SERIAL_CONSOLE_STDOUT:forcevariable:pn-<recipename> = \"<serial_ipname>\"\n'
             confstr += '\tin petalinuxbsp.conf file to specify the stdin/stdout."\n'
-
-        serialconfstr += '\nconfig %s_%s_IP_NAME\n' % (
-            serial_Kconf, comp.upper())
+        if comp == 'DTG':
+            serialconfstr += '\nconfig %s_IP_NAME\n' % (
+                serial_Kconf)
+        else:
+            serialconfstr += '\nconfig %s_%s_IP_NAME\n' % (
+                serial_Kconf, comp.upper())
         serialconfstr += '\tstring\n'
         for slave in IpsToAdd + ['manual']:
             if comp in ['PLM', 'PMUFW'] and re.search(
