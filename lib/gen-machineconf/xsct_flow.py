@@ -17,9 +17,83 @@ import project_config
 import post_process_config
 import rootfs_config
 import subprocess
+import multiconfigs
 import kconfig_syshw
 
 logger = logging.getLogger('Gen-Machineconf')
+
+class xsctGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
+    def MBTuneFeatures(self):
+        if self.MBTunesDone:
+            return
+        logger.info('Generating microblaze processor tunes')
+
+        SocTuneDict = {
+              "zynqmp" : {
+                           "microblaze-pmu" : "microblaze v9.2 barrel-shift pattern-compare reorder fpu-soft"
+                         },
+               "versal" : {
+                           "microblaze-pmc" : "microblaze v10.0 barrel-shift pattern-compare reorder multiply-high divide-hard fpu-soft",
+                           "microblaze-psm" : "microblaze v10.0 barrel-shift pattern-compare reorder multiply-high divide-hard fpu-soft"
+                          },
+               "versal-net" : {
+                           "microblaze-pmc" : "microblaze v10.0 barrel-shift pattern-compare reorder multiply-high divide-hard fpu-soft",
+                           "microblaze-psm" : "microblaze v10.0 barrel-shift pattern-compare reorder multiply-high divide-hard fpu-soft"
+                              }
+        }
+
+        microblaze_inc_str = ""
+
+        proc_type = self.args.soc_family
+        for id in SocTuneDict.keys():
+            if id == proc_type:
+                for tune in SocTuneDict[id].keys():
+                    microblaze_inc_str += 'AVAILTUNES += "%s"\n' % tune
+                    microblaze_inc_str += 'TUNE_FEATURES:tune-%s = "%s"\n' % (tune, SocTuneDict[id][tune])
+                    microblaze_inc_str += 'PACKAGE_EXTRA_ARCHS:tune-%s = "${TUNE_PKGARCH}"\n' % tune
+                    microblaze_inc_str += '\n'
+
+        if microblaze_inc_str:
+            microblaze_inc_str += 'require conf/machine/include/xilinx-microblaze.inc\n'
+
+            microblaze_inc = os.path.join(self.args.bbconf_dir, 'microblaze.inc')
+            with open(microblaze_inc, 'w') as file_f:
+                file_f.write(microblaze_inc_str)
+
+        self.MBTunesDone = True
+
+    def ParseCpuDict(self):
+        for mc_name in self.MultiConfUser:
+            if mc_name not in self.MultiConfMap:
+                logger.error("Unable to find selected multiconfig (%s)" % mc_name)
+            else:
+                self.mcname = mc_name
+                self.cpuname = self.MultiConfMap[mc_name]['cpuname']
+                self.cpu = self.MultiConfMap[mc_name]['cpu']
+                self.core = self.MultiConfMap[mc_name]['core']
+                self.domain = self.MultiConfMap[mc_name]['domain']
+                self.os_hint = self.MultiConfMap[mc_name]['os_hint']
+
+                if self.cpu == 'xlnx,microblaze':
+                    self.MBTuneFeatures()
+                elif self.cpu == 'pmu-microblaze':
+                    self.MBTuneFeatures()
+                elif self.cpu == 'pmc-microblaze':
+                    self.MBTuneFeatures()
+                elif self.cpu == 'psm-microblaze':
+                    self.MBTuneFeatures()
+
+    def GenerateMultiConfigs(self):
+        multiconfigs.GenerateMultiConfigFiles.GenerateMultiConfigs(self)
+
+        self.ParseCpuDict()
+
+        return self.MultiConfDict
+
+    def __init__(self, args, multi_conf_map, system_conffile=''):
+        self.MBTunesDone = False
+
+        multiconfigs.GenerateMultiConfigFiles.__init__(self, args, multi_conf_map, system_conffile=system_conffile)
 
 
 def AddXsctUtilsPath(xsct_tool):
@@ -104,12 +178,57 @@ def GetFlashInfo(genmachine_scripts, output, system_conffile, hw_file):
          flashinfo_file)
     common_utils.RunCmd(cmd, output, shell=True)
 
+# Mapping of DeviceId to CPU Dictionary
+SocCpuDict = {
+    'microblaze' : {
+                 'microblaze'      : { 'cpu' : 'xlnx,microblaze', 'core': '0', 'domain': 'None', 'os_hint' : 'linux' }
+                   },
+    'zynq':    {
+                 'ps7_cortexa9'    : { 'cpu' : 'arm,cortex-a9',   'core': '0', 'domain': 'None', 'os_hint' : 'None' }
+               },
+    'zynqmp' : {
+                 'psu_cortexa53_0' : { 'cpu' : 'arm,cortex-a53',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_cortexa53_1' : { 'cpu' : 'arm,cortex-a53',  'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_cortexa53_2' : { 'cpu' : 'arm,cortex-a53',  'core': '2', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_cortexa53_3' : { 'cpu' : 'arm,cortex-a53',  'core': '3', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_cortexr5_0'  : { 'cpu' : 'arm,cortex-r5',   'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_cortexr5_1'  : { 'cpu' : 'arm,cortex-r5',   'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psu_pmu_0'       : { 'cpu' : 'pmu-microblaze',  'core': '0', 'domain': 'None', 'os_hint' : 'None' }
+               },
+    'versal' : {
+                 'psv_cortexa72_0' : { 'cpu' : 'arm,cortex-a72',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa72_1' : { 'cpu' : 'arm,cortex-a72',  'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa72_2' : { 'cpu' : 'arm,cortex-a72',  'core': '2', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa72_3' : { 'cpu' : 'arm,cortex-a72',  'core': '3', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexr5_0'  : { 'cpu' : 'arm,cortex-r5',   'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexr5_1'  : { 'cpu' : 'arm,cortex-r5',   'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_pmc_0'       : { 'cpu' : 'pmc-microblaze',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_psm_0'       : { 'cpu' : 'psm-microblaze',  'core': '0', 'domain': 'None', 'os_hint' : 'None' }
+               },
+    'versal-net': {
+                 'psx_cortexa78_0' : { 'cpu' : 'arm,cortex-a78',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa78_1' : { 'cpu' : 'arm,cortex-a78',  'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa78_2' : { 'cpu' : 'arm,cortex-a78',  'core': '2', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexa78_3' : { 'cpu' : 'arm,cortex-a78',  'core': '3', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexr52_0' : { 'cpu' : 'arm,cortex-r52',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_cortexr52_1' : { 'cpu' : 'arm,cortex-r52',  'core': '1', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_pmc_0'       : { 'cpu' : 'pmc-microblaze',  'core': '0', 'domain': 'None', 'os_hint' : 'None' },
+                 'psv_psm_0'       : { 'cpu' : 'psm-microblaze',  'core': '0', 'domain': 'None', 'os_hint' : 'None' }
+               },
+    }
 
 def ParseXsa(args):
     if args.hw_flow == 'sdt':
         raise Exception('Invalide HW source Specified for XSCT Flow.')
 
-    def gatherHWInfo(hw_file):
+    def LookupCpuInfoFromSocFam(proc_type):
+        for id in SocCpuDict.keys():
+            if id == proc_type:
+                return SocCpuDict[id]
+        logger.error('Unable to find proc_type %s' % proc_type)
+        return {}
+
+    def gatherHWInfo(args):
         nonlocal Kconfig_syshw
         nonlocal plnx_syshw_file
         nonlocal project_cfgdir
@@ -168,6 +287,12 @@ def ParseXsa(args):
         if 'soc_variant' not in hw_info:
             hw_info['soc_variant'] = project_config.DetectSocVariant(hw_info['device_id'])
 
+        # Generate CPU list
+        if hasattr(args, 'multiconfigenable') and args.multiconfigenable:
+            hw_info['cpu_info_dict'] = LookupCpuInfoFromSocFam(hw_info['soc_family'])
+        else:
+            hw_info['cpu_info_dict'] = {}
+
         return hw_info
 
 
@@ -188,7 +313,7 @@ def ParseXsa(args):
 
 
     #### Gather:
-    hw_info = gatherHWInfo(args.hw_file)
+    hw_info = gatherHWInfo(args)
 
     if hw_info['machine']:
         args.machine = hw_info['machine']
@@ -223,9 +348,12 @@ def ParseXsa(args):
         rootfs_config.GenRootfsConfig(args, system_conffile)
 
     #### Generate the configuration:
+    MCObject = xsctGenerateMultiConfigFiles(args, hw_info['multiconfigs'], system_conffile=system_conffile)
+
     project_config.GenerateConfiguration(args, hw_info,
                                          system_conffile,
-                                         plnx_syshw_file)
+                                         plnx_syshw_file,
+                                         MCObject=MCObject)
 
 def register_commands(subparsers):
     parser_xsa = subparsers.add_parser('parse-xsa',
@@ -238,5 +366,11 @@ def register_commands(subparsers):
 
     parser_xsa.add_argument('-l', '--localconf', metavar='<config_file>',
                             help='Write local.conf changes to this file', type=os.path.realpath)
+
+    parser_xsa.add_argument('--multiconfigfull', action='store_true',
+                            help='Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal')
+
+    parser_xsa.add_argument('--multiconfigenable', action='store_true',
+                            help='Enable multiconfig support. default is disabled.')
 
     parser_xsa.set_defaults(func=ParseXsa)
