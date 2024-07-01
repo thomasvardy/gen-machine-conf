@@ -167,7 +167,7 @@ class CreateMultiConfigFiles():
         conf_file_str  = 'TMPDIR .= "-${BB_CURRENT_MC}"\n\n'
         conf_file_str += 'DISTRO = "%s"\n' % distro_name
         conf_file_str += 'DEFAULTTUNE = "%s"\n' % tune
-        conf_file_str += 'CONFIG_DTFILE = "%s"\n' % dts_file
+        conf_file_str += 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
         conf_file_str += 'ESW_MACHINE = "%s"\n' % self.cpuname
         conf_file_str += extra_conf
         common_utils.AddStrToFile(conf_file, conf_file_str)
@@ -413,7 +413,7 @@ class CreateMultiConfigFiles():
                             '-f')
         if not conf_file.endswith('/default.conf'):
             conf_file_str  = 'TMPDIR .= "-${BB_CURRENT_MC}"\n\n'
-            conf_file_str += 'CONFIG_DTFILE = "%s"\n' % dts_file
+            conf_file_str += 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
             common_utils.AddStrToFile(conf_file, conf_file_str)
 
     def CortexA72Linux(self):
@@ -481,7 +481,7 @@ class CreateMultiConfigFiles():
                             '-f')
         if not conf_file.endswith('/default.conf'):
             conf_file_str  = 'TMPDIR .= "-${BB_CURRENT_MC}"\n\n'
-            conf_file_str += 'CONFIG_DTFILE = "%s"\n' % dts_file
+            conf_file_str += 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
             common_utils.AddStrToFile(conf_file, conf_file_str)
 
     # TODO - Use lop-a72* dts as a78 lop dts are still under development.
@@ -544,7 +544,7 @@ class CreateMultiConfigFiles():
                             '-f')
         if not conf_file.endswith('/default.conf'):
             conf_file_str  = 'TMPDIR .= "-${BB_CURRENT_MC}"\n\n'
-            conf_file_str += 'CONFIG_DTFILE = "%s"\n' % dts_file
+            conf_file_str += 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
             common_utils.AddStrToFile(conf_file, conf_file_str)
 
     def MBTuneFeatures(self):
