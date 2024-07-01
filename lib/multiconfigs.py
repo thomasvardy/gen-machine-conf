@@ -167,10 +167,7 @@ class CreateMultiConfigFiles():
         conf_file_str = 'CONFIG_DTFILE = "%s"\n' % dts_file
         conf_file_str += 'ESW_MACHINE = "%s"\n' % self.cpuname
         conf_file_str += 'DEFAULTTUNE = "%s"\n' % tune
-        conf_file_str += 'DEF_MC_TMPDIR_PREFIX := "${@d.getVar(\'MC_TMPDIR_PREFIX\', False) or d.getVar(\'TMPDIR\', False)}"\n'
-        conf_file_str += 'MC_TMPDIR_PREFIX ?= "${DEF_MC_TMPDIR_PREFIX}"\n'
-        conf_file_str += 'BB_HASHEXCLUDE_COMMON:append = " MC_TMPDIR_PREFIX"\n'
-        conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_filename
+        conf_file_str += 'TMPDIR .= "-${BB_CURRENT_MC}"\n'
         conf_file_str += 'DISTRO = "%s"\n' % distro_name
         conf_file_str += extra_conf
         common_utils.AddStrToFile(conf_file, conf_file_str)
@@ -198,7 +195,7 @@ class CreateMultiConfigFiles():
                         psu_init_f, self.args.psu_init_path))
             mc_filename = self.args.machine + '-' + mc_name
             self.MultiConfDict['FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_filename
-            self.MultiConfDict['FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
+            self.MultiConfDict['FsblDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
             extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
@@ -259,7 +256,7 @@ class CreateMultiConfigFiles():
                         psu_init_f, self.args.psu_init_path))
             mc_filename = self.args.machine + '-' + mc_name
             self.MultiConfDict['R5FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_filename
-            self.MultiConfDict['R5FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
+            self.MultiConfDict['R5FsblDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
             extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
@@ -415,12 +412,8 @@ class CreateMultiConfigFiles():
                             dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
                             '-f')
         conf_file_str = 'CONFIG_DTFILE = "%s"\n' % dts_file
-        if conf_file.endswith('/default.conf'):
-            conf_file_str += 'DEF_MC_TMPDIR_PREFIX := "${@d.getVar(\'MC_TMPDIR_PREFIX\', False) or d.getVar(\'TMPDIR\', False)}"\n'
-            conf_file_str += 'MC_TMPDIR_PREFIX ?= "${DEF_MC_TMPDIR_PREFIX}"\n'
-            conf_file_str += 'BB_HASHEXCLUDE_COMMON:append = " MC_TMPDIR_PREFIX"\n'
-        else:
-            conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_name
+        if not conf_file.endswith('/default.conf'):
+            conf_file_str += 'TMPDIR .= "-${BB_CURRENT_MC}"\n'
         common_utils.AddStrToFile(conf_file, conf_file_str)
 
     def CortexA72Linux(self):
@@ -487,12 +480,8 @@ class CreateMultiConfigFiles():
                             dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
                             '-f')
         conf_file_str = 'CONFIG_DTFILE = "%s"\n' % dts_file
-        if conf_file.endswith('/default.conf'):
-            conf_file_str += 'DEF_MC_TMPDIR_PREFIX := "${@d.getVar(\'MC_TMPDIR_PREFIX\', False) or d.getVar(\'TMPDIR\', False)}"\n'
-            conf_file_str += 'MC_TMPDIR_PREFIX ?= "${DEF_MC_TMPDIR_PREFIX}"\n'
-            conf_file_str += 'BB_HASHEXCLUDE_COMMON:append = " MC_TMPDIR_PREFIX"\n'
-        else:
-            conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_name
+        if not conf_file.endswith('/default.conf'):
+            conf_file_str += 'TMPDIR .= "-${BB_CURRENT_MC}"\n'
         common_utils.AddStrToFile(conf_file, conf_file_str)
 
     # TODO - Use lop-a72* dts as a78 lop dts are still under development.
@@ -554,12 +543,8 @@ class CreateMultiConfigFiles():
                             dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
                             '-f')
         conf_file_str = 'CONFIG_DTFILE = "%s"\n' % dts_file
-        if conf_file.endswith('/default.conf'):
-            conf_file_str += 'DEF_MC_TMPDIR_PREFIX := "${@d.getVar(\'MC_TMPDIR_PREFIX\', False) or d.getVar(\'TMPDIR\', False)}"\n'
-            conf_file_str += 'MC_TMPDIR_PREFIX ?= "${DEF_MC_TMPDIR_PREFIX}"\n'
-            conf_file_str += 'BB_HASHEXCLUDE_COMMON:append = " MC_TMPDIR_PREFIX"\n'
-        else:
-            conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_name
+        if not conf_file.endswith('/default.conf'):
+            conf_file_str += 'TMPDIR .= "-${BB_CURRENT_MC}"\n'
         common_utils.AddStrToFile(conf_file, conf_file_str)
 
     def MBTuneFeatures(self):
@@ -587,7 +572,7 @@ class CreateMultiConfigFiles():
         self.MBTuneFeatures()
         mc_filename = self.args.machine + '-' + mc_name
         self.MultiConfDict['PmuMcDepends'] = 'mc::%s:pmu-firmware:do_deploy' % mc_filename
-        self.MultiConfDict['PmuFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
+        self.MultiConfDict['PmuFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_PLM=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone', 'microblaze-pmu', extra_conf_str)
@@ -603,7 +588,7 @@ class CreateMultiConfigFiles():
         self.MBTuneFeatures()
         mc_filename = self.args.machine + '-' + mc_name
         self.MultiConfDict['PlmMcDepends'] = 'mc::%s:plm-firmware:do_deploy' % mc_filename
-        self.MultiConfDict['PlmDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
+        self.MultiConfDict['PlmDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_PLM=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone', 'microblaze-pmc', extra_conf_str)
@@ -619,7 +604,7 @@ class CreateMultiConfigFiles():
         self.MBTuneFeatures()
         mc_filename = self.args.machine + '-' + mc_name
         self.MultiConfDict['PsmMcDepends'] = 'mc::%s:psm-firmware:do_deploy' % mc_filename
-        self.MultiConfDict['PsmFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
+        self.MultiConfDict['PsmFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_psm=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone-nolto', 'microblaze-psm', extra_conf_str)

@@ -113,10 +113,6 @@ def GenLocalConf(conf_file, machine_conf_file, system_conffile, petalinux):
         sdt_conf_str += 'SKIP_META_SECURITY_SANITY_CHECK = "1"\n'
         sdt_conf_str += 'SKIP_META_TPM_SANITY_CHECK = "1"\n'
 
-        sdt_conf_str += '\n# Each generated multiconfig defines it\'s own TMPDIR, either edit the\n'
-        sdt_conf_str += '# multiconfig files, or uncomment and adjust MC_TMPDIR_PREFIX below\n'
-        sdt_conf_str += '#MC_TMPDIR_PREFIX = "${TOPDIR}/tmp"\n'
-
     if not conf_file:
         if not petalinux:
             logger.note('To enable this, add the following to your local.conf:\n')
