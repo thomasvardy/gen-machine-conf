@@ -134,14 +134,21 @@ def GenKconfigProj(args, system_conffile, hw_info, MCObject=None):
         # for the first time with every new XSA configured.
         common_utils.RemoveConfigs('CONFIG_SUBSYSTEM_MEMORY_', system_conffile)
 
-    if 'cpu_info_dict' in hw_info:
-        if not MCObject:
-            MCObject = multiconfigs.CreateMultiConfigFiles(
-                args, hw_info['cpu_info_dict'], file_names_only=True)
+    if not MCObject and 'cpu_info_dict' in hw_info:
+        MCObject = multiconfigs.ParseMultiConfigFiles(
+            args, hw_info['cpu_info_dict'])
+
+    if MCObject:
         bbmctargets, multiconfig_min = MCObject.ParseCpuDict()
+        hw_info['multiconfigs'] = MCObject.MultiConfMap
     else:
-        bbmctargets = ''
-        multiconfig_min = ''
+        bbmctargets = []
+        multiconfig_min = []
+
+    # If the config switch that all multiconfigs are to be includes, they become
+    # the minimum (defaults to on)
+    if hasattr(args, 'multiconfigfull') and args.multiconfigfull:
+        multiconfig_min = bbmctargets
 
     Kconfig_BBMCTargets = ''
     if bbmctargets:
@@ -188,7 +195,7 @@ def ApplyConfValue(string, system_conffile):
         common_utils.UpdateConfigValue(conf, value, system_conffile)
 
 
-def PreProcessSysConf(args, system_conffile, hw_info, MCObject=None):
+def PreProcessSysConf(args, system_conffile, hw_info):
     if args.machine:
         common_utils.UpdateConfigValue('CONFIG_YOCTO_MACHINE_NAME',
                                        '"%s"' % args.machine, system_conffile)
@@ -201,18 +208,6 @@ def PreProcessSysConf(args, system_conffile, hw_info, MCObject=None):
     if hasattr(args, 'dts_path') and args.dts_path:
         common_utils.UpdateConfigValue('CONFIG_SUBSYSTEM_DT_XSCT_WORKSPACE',
                                        '"%s"' % args.dts_path, system_conffile)
-
-    # Read the args.multiconfigfull and enable full target set
-    if hasattr(args, 'multiconfigfull') and args.multiconfigfull \
-       and 'cpu_info_dict' in hw_info:
-        if not MCObject:
-            MCObject = multiconfigs.CreateMultiConfigFiles(
-                args, hw_info['cpu_info_dict'], file_names_only=True)
-        mctargets, _ = MCObject.ParseCpuDict()
-
-        for mctarget in mctargets:
-            cfgtarget = 'CONFIG_YOCTO_BBMC_%s' % mctarget.upper().replace('-', '_')
-            common_utils.UpdateConfigValue(cfgtarget, 'y', system_conffile)
 
     # Read the args.gen_pl_overlay and update sysconfig
     if hasattr(args, 'gen_pl_overlay') and args.gen_pl_overlay:
@@ -257,7 +252,7 @@ def PrintSystemConfiguration(args, model, device_id, cpu_info_dict=None):
                 cpu, _cpu.replace(',', ' '),
                 cpu_info_dict[cpu].get('core')))
 
-def GenerateConfiguration(args, hw_info, system_conffile, plnx_syshw_file, mctargets=[], MCObject=None):
+def GenerateConfiguration(args, hw_info, system_conffile, plnx_syshw_file, MCObject=None):
     import yocto_machine
     import update_buildconf
 
@@ -284,10 +279,12 @@ def GenerateConfiguration(args, hw_info, system_conffile, plnx_syshw_file, mctar
         args.bbconf_dir = os.path.join(machine_include_dir, args.machine)
         common_utils.CreateDir(args.bbconf_dir)
 
-        if not MCObject:
-            MCObject = multiconfigs.CreateMultiConfigFiles(args, hw_info['cpu_info_dict'],
-                                                           system_conffile=system_conffile)
-        MultiConfDict = MCObject.ParseCpuDict()
+        if not MCObject and 'cpu_info_dict' in hw_info:
+            MCObject = multiconfigs.GenerateMultiConfigFiles(
+                args, hw_info['multiconfigs'], system_conffile=system_conffile)
+
+        if MCObject:
+            MultiConfDict = MCObject.GenerateMultiConfigs()
 
     if args.petalinux:
         # Layers should be added before generating machine conf files

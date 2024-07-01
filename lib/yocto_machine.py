@@ -173,10 +173,11 @@ def YoctoCommonConfigs(args, arch, system_conffile):
     return machine_override_string
 
 
-def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
+def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, MultiConfDict):
+    machine_override_string = ''
     soc_family = args.soc_family
     soc_variant = args.soc_variant
-    machine_override_string = '\n# Yocto device-tree variables\n'
+    machine_override_string += '\n# Yocto device-tree variables\n'
     serial_manual = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_MANUAL_SELECT',
                                                 system_conffile)
     serial_ipname = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_IP_NAME',
@@ -360,13 +361,20 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file):
 
 def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, MultiConfDict):
     machine_override_string = ''
-    if args.soc_family == 'zynqmp':
-        machine_override_string += 'TUNEFILE[microblaze-pmu] = "%s"\n' % (
+    # Capture the tunes
+    if 'PmuTune' in MultiConfDict:
+        machine_override_string += 'TUNEFILE[%s] = "%s"\n' % (
+            MultiConfDict['PmuTune'],
             os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
-    elif args.soc_family == 'versal':
-        machine_override_string += 'TUNEFILE[microblaze-pmc] = "%s"\n' % (
+
+    if 'PlmTune' in MultiConfDict:
+        machine_override_string += 'TUNEFILE[%s] = "%s"\n' % (
+            MultiConfDict['PlmTune'],
             os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
-        machine_override_string += 'TUNEFILE[microblaze-psm] = "%s"\n' % (
+
+    if 'PsmTune' in MultiConfDict:
+        machine_override_string += 'TUNEFILE[%s] = "%s"\n' % (
+            MultiConfDict['PsmTune'],
             os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
 
     machine_override_string += '\n# Set the default (linux) domain device tree\n'
@@ -390,7 +398,8 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += 'include conf/machine/include/%s/${BB_CURRENT_MC}-features.conf\n' % args.machine
     machine_override_string += 'LIBXIL_CONFIG = "conf/machine/include/%s/${BB_CURRENT_MC}-libxil.conf"\n' % args.machine
 
-    if MultiConfDict.get('FsblMcDepends'):
+    # Linux baremeal file pointers and dependencies
+    if 'FsblMcDepends' in MultiConfDict:
         machine_override_string += '\n# First Stage Boot Loader\n'
         machine_override_string += 'FSBL_DEPENDS = ""\n'
         machine_override_string += 'FSBL_MCDEPENDS = "%s"\n' % MultiConfDict.get(
@@ -398,7 +407,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
         machine_override_string += 'FSBL_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
             'FsblDeployDir')
 
-    if MultiConfDict.get('R5FsblMcDepends'):
+    if 'R5FsblMcDepends' in MultiConfDict:
         machine_override_string += '\n# Cortex-R5 First Stage Boot Loader\n'
         machine_override_string += 'R5FSBL_DEPENDS = ""\n'
         machine_override_string += 'R5FSBL_MCDEPENDS = "%s"\n' % MultiConfDict.get(
@@ -406,7 +415,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
         machine_override_string += 'R5FSBL_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
             'R5FsblDeployDir')
 
-    if MultiConfDict.get('PmuMcDepends'):
+    if 'PmuMcDepends' in MultiConfDict:
         machine_override_string += '\n# PMU Firware\n'
         machine_override_string += 'PMU_DEPENDS = ""\n'
         machine_override_string += 'PMU_MCDEPENDS = "%s"\n' % MultiConfDict.get(
@@ -414,7 +423,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
         machine_override_string += 'PMU_FIRMWARE_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
             'PmuFWDeployDir')
 
-    if MultiConfDict.get('PlmMcDepends'):
+    if 'PlmMcDepends' in MultiConfDict:
         machine_override_string += '\n# Platform Loader and Manager\n'
         machine_override_string += 'PLM_DEPENDS = ""\n'
         machine_override_string += 'PLM_MCDEPENDS = "%s"\n' % MultiConfDict.get(
@@ -422,7 +431,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
         machine_override_string += 'PLM_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
             'PlmDeployDir')
 
-    if MultiConfDict.get('PsmMcDepends'):
+    if 'PsmMcDepends' in MultiConfDict:
         machine_override_string += '\n# PSM Firware\n'
         machine_override_string += 'PSM_DEPENDS = ""\n'
         machine_override_string += 'PSM_MCDEPENDS = "%s"\n' % MultiConfDict.get(
@@ -540,15 +549,8 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
     machine_override_string += '#@DESCRIPTION: Machine configuration for the '\
         '%s boards.\n' % machine_conf_file
 
-    if MultiConfDict:
-        bbmultitargets = common_utils.GetConfigValue('CONFIG_YOCTO_BBMC_', system_conffile,
-                                                      'choicelist', '=y').lower().replace('_', '-')
-        bbmulticonfig = []
-        for mc_name in bbmultitargets.split():
-            mc_filename = args.machine + '-' + mc_name
-            bbmulticonfig.append(mc_filename)
-
-        machine_override_string += '\nBBMULTICONFIG += "%s"\n' % ' '.join(bbmulticonfig)
+    if MultiConfDict and 'BBMULTICONFIG' in MultiConfDict and MultiConfDict['BBMULTICONFIG']:
+        machine_override_string += '\nBBMULTICONFIG += "%s"\n' % MultiConfDict['BBMULTICONFIG']
 
     # Add config machine overrides into machine conf file
     overrides = common_utils.GetConfigValue(
@@ -565,7 +567,7 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
 
     if args.hw_flow == 'xsct':
         machine_override_string += YoctoXsctConfigs(args, arch, dtg_machine,
-                                                    system_conffile, req_conf_file)
+                                                    system_conffile, req_conf_file, MultiConfDict)
     elif args.hw_flow == 'sdt':
         machine_override_string += YoctoSdtConfigs(args, arch, dtg_machine,
                                                    system_conffile, req_conf_file, MultiConfDict)
