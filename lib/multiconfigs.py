@@ -123,13 +123,14 @@ def GetLopperBaremetalDrvList(cpuname, outdir, dts_path, hw_file, lopper_args=''
 class CreateMultiConfigFiles():
     def GenLibxilFeatures(self, lopdts,
                           mc_name, distro_name, tune, extra_conf=''):
-        dts_file = os.path.join(self.args.dts_path, '%s.dts' % mc_name)
+        mc_filename = "%s-%s" % (self.args.machine, mc_name)
+        dts_file = os.path.join(self.args.dts_path, '%s.dts' % mc_filename)
         conf_file = os.path.join(self.args.config_dir,
-                                 'multiconfig', '%s.conf' % mc_name)
+                                 'multiconfig', '%s.conf' % mc_filename)
         libxil = os.path.join(self.args.bbconf_dir,
-                              '%s-libxil.conf' % mc_name)
+                              '%s-libxil.conf' % mc_filename)
         features = os.path.join(self.args.bbconf_dir,
-                                '%s-features.conf' % mc_name)
+                                '%s-features.conf' % mc_filename)
         lopper_args = ''
         # Build device tree
         domain_files = [lopdts]
@@ -169,7 +170,7 @@ class CreateMultiConfigFiles():
         conf_file_str += 'DEF_MC_TMPDIR_PREFIX := "${@d.getVar(\'MC_TMPDIR_PREFIX\', False) or d.getVar(\'TMPDIR\', False)}"\n'
         conf_file_str += 'MC_TMPDIR_PREFIX ?= "${DEF_MC_TMPDIR_PREFIX}"\n'
         conf_file_str += 'BB_HASHEXCLUDE_COMMON:append = " MC_TMPDIR_PREFIX"\n'
-        conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_name
+        conf_file_str += 'TMPDIR = "${MC_TMPDIR_PREFIX}-%s"\n' % mc_filename
         conf_file_str += 'DISTRO = "%s"\n' % distro_name
         conf_file_str += extra_conf
         common_utils.AddStrToFile(conf_file, conf_file_str)
@@ -179,8 +180,7 @@ class CreateMultiConfigFiles():
             domain = self.domain
         suffix = '-%s' % domain if domain and domain != 'None' else ''
         lto = '-nolto' if not domain or domain == 'None' else ''
-        mc_name = 'cortexa53-%s-%s%s-baremetal' % (
-            self.core, self.args.soc_family, suffix)
+        mc_name = 'cortexa53-%s%s-baremetal' % (self.core, suffix)
         self.a53FsblDone = True
         self.MultiConfFiles.append(mc_name)
         if domain == 'fsbl':
@@ -196,8 +196,9 @@ class CreateMultiConfigFiles():
                         self.args.psu_init_path, psu_init_f)):
                     logger.warning('Unable to find %s in %s' % (
                         psu_init_f, self.args.psu_init_path))
-            self.MultiConfDict['FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_name
-            self.MultiConfDict['FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_name
+            mc_filename = self.args.machine + '-' + mc_name
+            self.MultiConfDict['FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_filename
+            self.MultiConfDict['FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
             extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
@@ -209,8 +210,7 @@ class CreateMultiConfigFiles():
 
     def CortexA72Baremetal(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexa72-%s-%s%s-baremetal' % (
-            self.core, self.args.soc_family, suffix)
+        mc_name = 'cortexa72-%s%s-baremetal' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -226,8 +226,7 @@ class CreateMultiConfigFiles():
     #        have tune file for cortexa78.
     def CortexA78Baremetal(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexa78-%s-%s%s-baremetal' % (
-            self.core, self.args.soc_family, suffix)
+        mc_name = 'cortexa78-%s%s-baremetal' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -244,8 +243,7 @@ class CreateMultiConfigFiles():
             domain = self.domain
         suffix = '-%s' % domain if domain and domain != 'None' else ''
         lto = '-nolto' if not domain or domain == 'None' else ''
-        mc_name = 'cortexr5-%s-%s%s-baremetal' % (self.core,
-                                                  self.args.soc_family, suffix)
+        mc_name = 'cortexr5-%s%s-baremetal' % (self.core, suffix)
         self.r5FsblDone = True
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
@@ -259,8 +257,9 @@ class CreateMultiConfigFiles():
                         self.args.psu_init_path, psu_init_f)):
                     logger.warning('Unable to find %s in %s' % (
                         psu_init_f, self.args.psu_init_path))
-            self.MultiConfDict['R5FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_name
-            self.MultiConfDict['R5FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_name
+            mc_filename = self.args.machine + '-' + mc_name
+            self.MultiConfDict['R5FsblMcDepends'] = 'mc::%s:fsbl-firmware:do_deploy' % mc_filename
+            self.MultiConfDict['R5FsblDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
             extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
@@ -275,8 +274,7 @@ class CreateMultiConfigFiles():
             domain = self.domain
         suffix = '-%s' % domain if domain and domain != 'None' else ''
         lto = '-nolto' if not domain or domain == 'None' else ''
-        mc_name = 'cortexr52-%s-%s%s-baremetal' % (self.core,
-                                                  self.args.soc_family, suffix)
+        mc_name = 'cortexr52-%s%s-baremetal' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -291,8 +289,7 @@ class CreateMultiConfigFiles():
 
     def CortexA53FreeRtos(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexa53-%s-%s%s-freertos' % (self.core,
-                                                  self.args.soc_family, suffix)
+        mc_name = 'cortexa53-%s%s-freertos' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -306,8 +303,7 @@ class CreateMultiConfigFiles():
 
     def CortexA72FreeRtos(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexa72-%s-%s%s-freertos' % (self.core,
-                                                  self.args.soc_family, suffix)
+        mc_name = 'cortexa72-%s%s-freertos' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -323,8 +319,7 @@ class CreateMultiConfigFiles():
     #        have tune file for cortexa78.
     def CortexA78FreeRtos(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexa78-%s-%s%s-freertos' % (self.core,
-                                                  self.args.soc_family, suffix)
+        mc_name = 'cortexa78-%s%s-freertos' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -338,8 +333,7 @@ class CreateMultiConfigFiles():
 
     def CortexR5FreeRtos(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexr5-%s-%s%s-freertos' % (self.core,
-                                                 self.args.soc_family, suffix)
+        mc_name = 'cortexr5-%s%s-freertos' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -353,8 +347,7 @@ class CreateMultiConfigFiles():
 
     def CortexR52FreeRtos(self):
         suffix = '-%s' % self.domain if self.domain and self.domain != 'None' else ''
-        mc_name = 'cortexr52-%s-%s%s-freertos' % (self.core,
-                                                 self.args.soc_family, suffix)
+        mc_name = 'cortexr52-%s%s-freertos' % (self.core, suffix)
         self.MultiConfFiles.append(mc_name)
         # Return if mc_name not enabled by user
         if self.ReturnConfFiles or mc_name not in self.MultiConfUser:
@@ -374,8 +367,7 @@ class CreateMultiConfigFiles():
             conf_file = os.path.join(self.args.config_dir,
                                      'multiconfig', 'default.conf')
         else:
-            mc_name = 'cortexa53-%s-%s-linux' % (
-                self.args.soc_family, self.domain)
+            mc_name = 'cortexa53-%s-linux' % (self.domain)
             dts_file = os.path.join(self.args.dts_path if self.args.dts_path else '',
                                     '%s.dts' % mc_name)
             conf_file = os.path.join(self.args.config_dir,
@@ -439,8 +431,7 @@ class CreateMultiConfigFiles():
             conf_file = os.path.join(self.args.config_dir,
                                      'multiconfig', 'default.conf')
         else:
-            mc_name = 'cortexa72-%s-%s-linux' % (
-                self.args.soc_family, self.domain)
+            mc_name = 'cortexa72-%s-linux' % (self.domain)
             dts_file = os.path.join(self.args.dts_path if self.args.dts_path else '',
                                     '%s.dts' % mc_name)
             conf_file = os.path.join(self.args.config_dir,
@@ -514,8 +505,7 @@ class CreateMultiConfigFiles():
             conf_file = os.path.join(self.args.config_dir,
                                      'multiconfig', 'default.conf')
         else:
-            mc_name = 'cortexa78-%s-%s-linux' % (
-                self.args.soc_family, self.domain)
+            mc_name = 'cortexa78-%s-linux' % (self.domain)
             dts_file = os.path.join(self.args.dts_path if self.args.dts_path else '',
                                     '%s.dts' % mc_name)
             conf_file = os.path.join(self.args.config_dir,
@@ -587,7 +577,7 @@ class CreateMultiConfigFiles():
 
     def PmuMicroblaze(self):
         ''' pmu-microblaze is ALWAYS Baremetal, no domain'''
-        mc_name = 'microblaze-0-pmu'
+        mc_name = 'microblaze-pmu'
         self.MultiConfFiles.append(mc_name)
         self.MultiConfMin.append(mc_name)
         # Return if mc_name not enabled by user
@@ -595,14 +585,15 @@ class CreateMultiConfigFiles():
             return
         logger.info('Generating microblaze baremetal configuration for ZynqMP PMU')
         self.MBTuneFeatures()
-        self.MultiConfDict['PmuMcDepends'] = 'mc::%s:pmu-firmware:do_deploy' % mc_name
-        self.MultiConfDict['PmuFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_name
+        mc_filename = self.args.machine + '-' + mc_name
+        self.MultiConfDict['PmuMcDepends'] = 'mc::%s:pmu-firmware:do_deploy' % mc_filename
+        self.MultiConfDict['PmuFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_PLM=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone', 'microblaze-pmu', extra_conf_str)
 
     def PmcMicroblaze(self):
-        mc_name = 'microblaze-0-pmc'
+        mc_name = 'microblaze-pmc'
         self.MultiConfFiles.append(mc_name)
         self.MultiConfMin.append(mc_name)
         # Return if mc_name not enabled by user
@@ -610,14 +601,15 @@ class CreateMultiConfigFiles():
             return
         logger.info('Generating microblaze baremetal configuration for Versal PMC (PLM)')
         self.MBTuneFeatures()
-        self.MultiConfDict['PlmMcDepends'] = 'mc::%s:plm-firmware:do_deploy' % mc_name
-        self.MultiConfDict['PlmDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_name
+        mc_filename = self.args.machine + '-' + mc_name
+        self.MultiConfDict['PlmMcDepends'] = 'mc::%s:plm-firmware:do_deploy' % mc_filename
+        self.MultiConfDict['PlmDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_PLM=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone', 'microblaze-pmc', extra_conf_str)
 
     def PsmMicroblaze(self):
-        mc_name = 'microblaze-0-psm'
+        mc_name = 'microblaze-psm'
         self.MultiConfFiles.append(mc_name)
         self.MultiConfMin.append(mc_name)
         # Return if mc_name not enabled by user
@@ -625,8 +617,9 @@ class CreateMultiConfigFiles():
             return mc_name
         logger.info('Generating microblaze baremetal configuration for Versal PSM')
         self.MBTuneFeatures()
-        self.MultiConfDict['PsmMcDepends'] = 'mc::%s:psm-firmware:do_deploy' % mc_name
-        self.MultiConfDict['PsmFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_name
+        mc_filename = self.args.machine + '-' + mc_name
+        self.MultiConfDict['PsmMcDepends'] = 'mc::%s:psm-firmware:do_deploy' % mc_filename
+        self.MultiConfDict['PsmFWDeployDir'] = '${MC_TMPDIR_PREFIX}-%s/deploy/images/${MACHINE}' % mc_filename
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_psm=1"\n'
         self.GenLibxilFeatures('', mc_name,
                                'xilinx-standalone-nolto', 'microblaze-psm', extra_conf_str)

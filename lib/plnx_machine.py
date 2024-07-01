@@ -284,8 +284,13 @@ def GeneratePlnxConfig(args, machine_conf_file):
     if hw_flow == 'sdt':
         bbmultitargets = common_utils.GetConfigValue('CONFIG_YOCTO_BBMC_', system_conffile,
                                                      'choicelist', '=y').lower().replace('_', '-')
+        bbmulticonfig = []
+        for mc_name in bbmultitargets.split():
+            mc_filename = args.machine + '-' + mc_name
+            bbmulticonfig.append(mc_filename)
+
         override_string += '# targets to build the multi artifacts\n'
-        override_string += 'BBMULTICONFIG = "%s"\n' % bbmultitargets
+        override_string += 'BBMULTICONFIG = "%s"\n' % ' '.join(bbmulticonfig)
     # AUTO add local uninative tarball if exists, to support no network case.
     # CONFIG_SITE variable exported in case of extensible SDK only
     import glob

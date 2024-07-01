@@ -544,9 +544,14 @@ def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict='
         '%s boards.\n' % machine_conf_file
 
     if MultiConfDict:
-        multiconfig_min = common_utils.GetConfigValue('CONFIG_YOCTO_BBMC_', system_conffile,
+        bbmultitargets = common_utils.GetConfigValue('CONFIG_YOCTO_BBMC_', system_conffile,
                                                       'choicelist', '=y').lower().replace('_', '-')
-        machine_override_string += '\nBBMULTICONFIG += "%s"\n' % multiconfig_min
+        bbmulticonfig = []
+        for mc_name in bbmultitargets.split():
+            mc_filename = args.machine + '-' + mc_name
+            bbmulticonfig.append(mc_filename)
+
+        machine_override_string += '\nBBMULTICONFIG += "%s"\n' % ' '.join(bbmulticonfig)
 
     # Add config machine overrides into machine conf file
     overrides = common_utils.GetConfigValue(
