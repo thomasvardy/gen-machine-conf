@@ -389,13 +389,6 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mu
         machine_override_string += 'YAML_SERIAL_CONSOLE_BAUDRATE ?= "%s"\n' \
                                    % baudrate
 
-    # Variables that changes based on hw design or board specific requirement must be
-    # defined before calling the required inclusion file else pre-expansion value
-    # defined in respective generic machine conf will be set.
-    machine_override_string += '\n# Required generic machine inclusion\n'
-    machine_override_string += 'require conf/machine/%s.conf\n' % \
-        req_conf_file
-
     # Variable used for Vivado XSA path, name using local file or subversion
     # path
     machine_override_string += '\n# Add system XSA\n'
@@ -417,6 +410,13 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mu
         machine_override_string += 'IMAGE_FEATURES += "hwcodecs"\n'
 
     machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
+
+    # Variables that changes based on hw design or board specific requirement must be
+    # defined before calling the required inclusion file else pre-expansion value
+    # defined in respective generic machine conf will be set.
+    machine_override_string += '\n# Required generic machine inclusion\n'
+    machine_override_string += 'require conf/machine/%s.conf\n' % \
+        req_conf_file
 
     return machine_override_string
 
