@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import re
 import common_utils
 import project_config
 import glob
