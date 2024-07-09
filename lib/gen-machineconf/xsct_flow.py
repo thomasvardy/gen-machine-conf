@@ -64,8 +64,6 @@ class xsctGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
 
     def ParseCpuDict(self):
         for mc_name in self.MultiConfUser:
-            if not mc_name:
-                continue
             if mc_name not in self.MultiConfMap:
                 logger.error("Unable to find selected multiconfig (%s)" % mc_name)
             else:
