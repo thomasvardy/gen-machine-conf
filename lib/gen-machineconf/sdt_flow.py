@@ -526,6 +526,10 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                 self.os_hint, self.domain))
 
     def ParseCpuDict(self):
+        if not self.MultiConfUser or not self.MultiConfMap:
+            logger.debug("No multilibs enabled.")
+            return
+
         for mc_name in self.MultiConfUser:
             if mc_name not in self.MultiConfMap:
                 logger.error("Unable to find selected multiconfig (%s)" % mc_name)
