@@ -386,7 +386,10 @@ def GenConf_flash(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\tIf you preferred flash is not on the list or you don\'t want PetaLinux\n'
     confstr += '\tto manage your flash partition, please select manual.\n'
     flashconfstr = ''
+    flaship = ''
     for slave in IpsToAdd + ['manual']:
+        if slave == 'axi_emc_0_bank0':
+            flaship = re.sub('_bank0$', '', slave)
         confstr += '\nconfig %s_%s_SELECT\n' % (flash_Kconf, slave.upper())
         confstr += '\tbool "%s"\n' % slave
         if slave == 'manual':
@@ -446,7 +449,7 @@ def GenConf_flash(IpsToAdd, slavesdict, proc_ipname, arch):
 
         flashconfstr += '\nconfig %s_IP_NAME\n' % flash_Kconf
         flashconfstr += '\tstring\n'
-        flashconfstr += '\tdefault %s\n' % slave
+        flashconfstr += '\tdefault %s\n' % flaship
         flashconfstr += '\tdepends on %s_%s_SELECT\n' % (
             flash_Kconf, slave.upper())
 
