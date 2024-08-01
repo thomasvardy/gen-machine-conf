@@ -183,6 +183,15 @@ def update_cfg(cfg_file, xilinx_arch):
         init_managerstr = 'INIT_MANAGER_DEFAULT = "' + \
             packages['Init_manager'] + '"\n\n'
         cfg_file.write(init_managerstr)
+    init_manager = packages['Init_manager']
+    if xilinx_arch in ('zynqmp', 'versal'):
+        if init_manager == 'sysvinit':
+            unlock_sstates = 'SIGGEN_LOCKEDSIGS_TYPES = ""\n'
+            cfg_file.write(unlock_sstates)
+    elif xilinx_arch in ('zynq', 'microblaze'):
+         if init_manager == 'systemd':
+            unlock_sstates = 'SIGGEN_LOCKEDSIGS_TYPES = ""\n'
+            cfg_file.write(unlock_sstates)
     # Add Tune_feature variable
     if 'default_tune' in packages.keys():
         default_tunestr = 'DEFAULTTUNE = "cortexa72-cortexa53-crypto"\n'
