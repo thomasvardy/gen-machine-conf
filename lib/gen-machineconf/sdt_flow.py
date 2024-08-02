@@ -408,6 +408,8 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                                            % domain_name.lower())
                 RunLopperGenDomainDTS(self.args.output, self.args.dts_path, self.args.hw_file,
 		                       ps_dts_file, domain_name, self.domain_yaml)
+            else:
+                ps_dts_file = self.args.hw_file
         elif self.gen_pl_overlay:
             # Do not overwrite original SDT file during overlay processing, Instead
             # write out to a intermediate file in output directory and use this
