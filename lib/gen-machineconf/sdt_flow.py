@@ -175,6 +175,23 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         conf_file_str += extra_conf
         common_utils.AddStrToFile(conf_file, conf_file_str, mode='a+')
 
+    def CortexA9Baremetal(self):
+        extra_conf_str = ''
+        if self.os_hint == 'fsbl':
+            logger.info('Generating cortex-a9 baremetal configuration for FSBL')
+            for psu_init_f in ['ps7_init.c', 'ps7_init.h']:
+                if not os.path.exists(os.path.join(
+                        self.args.psu_init_path, psu_init_f)):
+                    logger.warning('Unable to find %s in %s' % (
+                        psu_init_f, self.args.psu_init_path))
+            # This needs to be changes per fsbl-firmware recipe
+            extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
+        else:
+            logger.info(
+                'Generating cortex-a9 baremetal configuration for core %s [ %s ]' % (self.core, self.domain))
+
+        self.GenLibxilFeatures('', extra_conf_str)
+
     def CortexA53Baremetal(self):
         extra_conf_str = ''
         if self.os_hint == 'fsbl':
@@ -233,6 +250,12 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
 
         self.GenLibxilFeatures('lop-a53-imux.dts')
 
+    def CortexA9FreeRtos(self):
+        logger.info(
+            'Generating cortex-a9 FreeRTOS configuration for core %s [ %s ]' % (self.core, self.domain))
+
+        self.GenLibxilFeatures('')
+
     def CortexA72FreeRtos(self):
         logger.info(
             'Generating cortex-a72 FreeRTOS configuration for core %s [ %s ]' % (self.core, self.domain))
@@ -256,6 +279,57 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             'Generating cortex-r52 FreeRTOS configuration for core %s [ %s ]' % (self.core, self.domain))
 
         self.GenLibxilFeatures('lop-r52-imux.dts')
+
+    def CortexA9Linux(self):
+        mc_name = self.mcname
+        if mc_name == '':
+            dts_file = os.path.join(self.args.dts_path if self.args.dts_path else '',
+                                    'cortexa9-linux.dts')
+            conf_file = None
+        else:
+            dts_file = os.path.join(self.args.dts_path if self.args.dts_path else '',
+                                    '%s.dts' % mc_name)
+            conf_file = os.path.join(self.args.config_dir,
+                                     'multiconfig', '%s.conf' % mc_name)
+        self.GenLinuxDts = True
+        self.MultiConfDict['LinuxDT'] = dts_file
+        logger.info('Generating cortex-a9 Linux configuration [ %s ]' % self.domain)
+        # Remove pl dt nodes from linux dts by running xlnx_overlay_dt script
+        # in lopper. This script provides full, dfx(static) pl overlays.
+        ps_dts_file = ''
+        if self.gen_pl_overlay:
+            # Do not overwrite original SDT file during overlay processing, Instead
+            # write out to a intermediate file in output directory and use this
+            # file for lopper pl overlay operation.
+            ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
+                                       % pathlib.Path(self.args.hw_file).stem)
+            RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
+                                      ps_dts_file, 'xlnx_overlay_dt cortexa9-%s %s'
+                                      % (self.args.soc_family, self.gen_pl_overlay),
+                                      '-f')
+            logger.info('pl-overlay [ %s ] is enabled for cortex-a9 file: %s and stored in intermediate ps dts file: %s'
+                        % (self.gen_pl_overlay, self.args.hw_file, ps_dts_file))
+            # Once RunLopperPlOverlaycommand API is executed pl.dtsi will be
+            # generated in lopper output directory. Hence copy pl.dtsi from
+            # output directory to dts_path/pl-overlay-{full|dfx} directory.
+            # Later user can use this pl.dtsi as input file to firmware recipes.
+            CopyPlOverlayfile(self.args.output, self.args.dts_path, self.gen_pl_overlay)
+        else:
+            ps_dts_file = self.args.hw_file
+            logger.debug('No pl-overlay is enabled for cortex-a9 Linux dts file: %s'
+                         % ps_dts_file)
+
+        # We need linux dts for with and without pl-overlay else without
+        # cortexa9-linux.dts it fails to build.
+        lopper_args = '-f --enhanced'
+        if self.args.domain_file:
+            lopper_args += '-x "*.yaml"'
+        domain_files = [self.args.domain_file]
+        RunLopperGenLinuxDts(self.args.output, self.args.dts_path, domain_files, ps_dts_file,
+                            dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
+                            '-f')
+        if conf_file:
+            conf_file_str = 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
 
     def CortexA53Linux(self):
         mc_name = self.mcname
@@ -454,6 +528,21 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_psm=1"\n'
         self.GenLibxilFeatures('', extra_conf_str)
 
+    def ArmCortexA9Setup(self):
+        if self.os_hint.startswith('linux'):
+            if not self.GenLinuxDts:
+                self.CortexA9Linux()
+        elif self.os_hint == 'fsbl':
+            self.CortexA9Baremetal()
+        elif self.os_hint.startswith('baremetal'):
+            self.CortexA9Baremetal()
+        elif self.os_hint.startswith('freertos'):
+            self.CortexA9FreeRtos()
+        else:
+            logger.warning('cortex-a9 for unknown OS (%s), \
+                    parsing Baremetal. %s' % (self.os_hint, self.domain))
+            self.CortexA9Baremetal()
+
     def ArmCortexA53Setup(self):
         if self.os_hint.startswith('linux'):
             if not self.GenLinuxDts:
@@ -540,8 +629,9 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                 self.core = self.MultiConfMap[mc_name]['core']
                 self.domain = self.MultiConfMap[mc_name]['domain']
                 self.os_hint = self.MultiConfMap[mc_name]['os_hint']
-
-                if self.cpu == 'arm,cortex-a53':
+                if self.cpu == 'arm,cortex-a9':
+                    self.ArmCortexA9Setup()
+                elif self.cpu == 'arm,cortex-a53':
                     self.ArmCortexA53Setup()
                 elif self.cpu == 'arm,cortex-a72':
                     self.ArmCortexA72Setup()
@@ -589,7 +679,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
 
 def GetProcNameFromCpuInfo(cpuinfo_dict):
     for cpukey in cpuinfo_dict.keys():
-        if re.findall('.*cortexa78.*|.*cortexa72.*|.*cortexa53.*|microblaze', cpukey):
+        if re.findall('.*cortexa78.*|.*cortexa72.*|.*cortexa53.*|.*cortexa9.*|microblaze', cpukey):
             return cpukey
 
 
