@@ -10,23 +10,12 @@ files for the given HW file.
 
 ## Maintainers, Patches/Submissions, Community
 
-Please open pull requests for any changes.
+gen-machine-conf maintainers occasionally review the github pull requests
+associated with the project. There is no mailing list for submission of
+patches, but for format and style guidance please see the OE community patch
+submission guidelines, as described in:
 
-For more details follow the OE community patch submission guidelines, as described in:
-
-https://www.openembedded.org/wiki/Commit_Patch_Message_Guidelines
-https://www.openembedded.org/wiki/How_to_submit_a_patch_to_OpenEmbedded
-
-> **Note:** When creating patches, please use below format. To follow best practice,
-> if you have more than one patch use `--cover-letter` option while generating the
-> patches. Edit the 0000-cover-letter.patch and change the title and top of the
-> body as appropriate.
-
-**Syntax:**
-`git format-patch -s --subject-prefix="gen-machine-conf][<BRANCH_NAME>][PATCH" -1`
-
-**Example:**
-`git format-patch -s --subject-prefix="gen-machine-conf][xlnx_rel_v2023.1][PATCH" -1`
+https://docs.yoctoproject.org/dev/contributor-guide/submit-changes.html
 
 **Maintainers:**
 
