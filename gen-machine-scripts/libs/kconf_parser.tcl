@@ -94,7 +94,7 @@ proc read_config {} {
 					continue
 				}
 				# now check if flash_type exists
-				if { ![regexp "(^hbm.*)|(.*ddr.*)" $value matched] } {
+				if { ![regexp "(.*hbm.*)|(.*ddr.*)" $value matched] } {
 					set ip_name [hsi get_property IP_NAME [hsi get_cells -hier $value]]
 					if {[dict exists $mapping_dict $ip_name flash_type]} {
 						set flash_typ [dict get $mapping_dict $ip_name flash_type]
