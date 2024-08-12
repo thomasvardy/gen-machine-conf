@@ -556,6 +556,7 @@ proc add_bootscr_flash_offset_size_prop {fid qspi_bootscr_offset qspi_bootscr_si
 proc gen_dts_u_boot_node {fid} {
 	global kconfig_dict
 	set processor_ip_name [dict get $kconfig_dict processor ip_str]
+	set processor_ip_name [hsi get_property IP_NAME [hsi get_cells -hier $processor_ip_name]]
 	if {[string match {*microblaze*} $processor_ip_name]} {
 		return
 	}
