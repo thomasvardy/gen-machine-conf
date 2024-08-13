@@ -137,19 +137,23 @@ options:
                         Generate pl overlay for full, dfx configuration using xlnx_overlay_dt lopper script
   -d <domain_file>, --domain-file <domain_file>
                         Path to domain file (.yaml/.dts)
-  -p <psu_init_path>, --psu-init-path <psu_init_path>
-                        Path to psu_init files, defaults to system_dts path
-  -i <pdi path>, --fpga <pdi path>
-                        Path to pdi file
+  -i <psu_init_path>, --psu-init-path <psu_init_path>
+                        Path to psu_init or ps7_init files, defaults to system device tree output directory
+  -p <pl_path>, --pl <pl_path>
+                        Path to pdi or bitstream file
   -l <config_file>, --localconf <config_file>
                         Write local.conf changes to this file
   --multiconfigfull     Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal)
   --dts-path <dts_path>
                         Absolute path or subdirectory of conf/dts to place DTS files in (usually auto detected from DTS)
-$
 ```
 
-* MicroBlaze:
+> **Note:**
+> Using gen-machineconf in Yocto
+> 1. XSCT builds `--xsct-tool` arguments is not mandatory.
+> 2. SDT builds `--soc-family` arguments is not mandatory.
+
+* MicroBlaze XSCT Method:
 
 ```bash
 # Custom xsa method
@@ -159,7 +163,7 @@ $ gen-machineconf --soc-family microblaze --hw-description /<PATH_TO_CUSTOM_XSA>
 $ gen-machineconf --soc-family microblaze --hw-description /<PATH_TO_HDF_ARTIFACTORY>/kc705-microblazeel/system.xsa --machine-name kc705-microblazeel --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
-* Zynq-7000:
+* Zynq-7000 XSCT Method:
 
 ```bash
 # Custom xsa method
@@ -169,7 +173,17 @@ $ gen-machineconf --soc-family zynq --hw-description /<PATH_TO_CUSTOM_XSA>/zc702
 $ gen-machineconf --soc-family zynq --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zc702-zynq7/system.xsa --machine-name zc702-zynq7 --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
-* ZynqMP:
+* Zynq-7000 SDT Method:
+
+```bash
+# Without pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt
+
+# With full bitstream pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt -g full
+```
+
+* ZynqMP XSCT Method:
 
 ```bash
 # Custom xsa method
@@ -179,7 +193,20 @@ $ gen-machineconf --soc-family zynqmp --hw-description /<PATH_TO_CUSTOM_XSA>/zcu
 $ gen-machineconf --soc-family zynqmp --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zcu106-zynqmp/system.xsa --machine-name zcu106-zynqmp --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
-* Versal:
+* ZynqMP SDT Method:
+
+```bash
+# Without pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
+
+# With full bitstream pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
+
+# With dfx static pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+```
+
+* Versal XSCT Method:
 
 ```bash
 # Custom xsa method
@@ -189,3 +216,15 @@ $ gen-machineconf --soc-family versal --hw-description /<PATH_TO_CUSTOM_XSA>/vck
 $ gen-machineconf --soc-family versal --hw-description /<PATH_TO_HDF_ARTIFACTORY>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
+* Versal SDT Method:
+
+```bash
+# Without PL Overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
+
+# With segmented configuration pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
+
+# With dfx static pl overlay
+$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+```
