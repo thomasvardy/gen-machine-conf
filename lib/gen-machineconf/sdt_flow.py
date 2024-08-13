@@ -791,9 +791,9 @@ def ParseSDT(args):
     if not args.psu_init_path:
         args.psu_init_path = os.path.dirname(args.hw_file)
 
-    # Update FPGA path
-    if not args.fpga:
-        args.fpga = os.path.dirname(args.hw_file)
+    # Update PDI or bitstream path
+    if not args.pl:
+        args.pl = os.path.dirname(args.hw_file)
 
 
     #### Gather:
@@ -860,10 +860,11 @@ def register_commands(subparsers):
                             help='Generate pl overlay for full, dfx configuration using xlnx_overlay_dt lopper script')
     parser_sdt.add_argument('-d', '--domain-file', metavar='<domain_file>',
                             help='Path to domain file (.yaml/.dts)', type=os.path.realpath)
-    parser_sdt.add_argument('-p', '--psu-init-path', metavar='<psu_init_path>',
-                            help='Path to psu_init files, defaults to system_dts path', type=os.path.realpath)
-    parser_sdt.add_argument('-i', '--fpga', metavar='<pdi path>',
-                            help='Path to pdi file', type=os.path.realpath)
+    parser_sdt.add_argument('-i', '--psu-init-path', metavar='<psu_init_path>',
+                            help='Path to psu_init or ps7_init files, defaults to system device tree output directory',
+                            type=os.path.realpath)
+    parser_sdt.add_argument('-p', '--pl', metavar='<pl_path>',
+                            help='Path to pdi or bitstream file', type=os.path.realpath)
     parser_sdt.add_argument('-l', '--localconf', metavar='<config_file>',
                             help='Write local.conf changes to this file', type=os.path.realpath)
     parser_sdt.add_argument('--multiconfigfull', action='store_true',
