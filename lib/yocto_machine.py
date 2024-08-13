@@ -447,15 +447,15 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += 'LIBXIL_CONFIG = "conf/machine/include/%s/${BB_CURRENT_MC}-libxil.conf"\n' % args.machine
 
     if args.soc_family == 'versal':
-        if os.path.isdir(args.fpga):
-            pdis = glob.glob(os.path.join(args.fpga, '*.pdi'))
+        if os.path.isdir(args.pl):
+            pdis = glob.glob(os.path.join(args.pl, '*.pdi'))
             if not pdis:
                 raise Exception('Unable to find a pdi file in %s, \
-                        use the -i/--fpga option to point to the directory containing a .pdi file' % args.fpga)
+                        use the -p/--pl option to point to the directory containing a .pdi file' % args.pl)
             elif len(pdis) > 1:
                 # To handle the segmented flow where we will have *_boot.pdi and
                 # *_pld.pdi and picking up *_boot.pdi for base boot.
-                seg_pdis = glob.glob(os.path.join(args.fpga, '*_boot.pdi'))
+                seg_pdis = glob.glob(os.path.join(args.pl, '*_boot.pdi'))
                 if seg_pdis:
                     logger.warning(
                         'Multiple PDI files found, using *_boot.pdi for segmented configuration %s', seg_pdis[0])
@@ -463,14 +463,32 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
                 else:
                     logger.warning(
                         'Multiple PDI files found, using the first available pdi %s', pdis[0])
-            args.fpga = pdis[0]
-        if args.fpga:
+            args.pl = pdis[0]
+        if args.pl:
             machine_override_string += '\n# Versal PDI\n'
             machine_override_string += 'PDI_PATH_DIR = "%s"\n' % os.path.dirname(
-                args.fpga)
+                args.pl)
             machine_override_string += 'PDI_PATH = "${PDI_PATH_DIR}/%s"\n' % os.path.basename(
-                args.fpga)
+                args.pl)
             machine_override_string += 'PDI_PATH[vardepsexclude] += "PDI_PATH_DIR"\n'
+
+    if args.soc_family in ['zynqmp', 'zynq'] and not args.gen_pl_overlay:
+        if os.path.isdir(args.pl):
+            bit = glob.glob(os.path.join(args.pl, '*.bit'))
+            if not bit:
+                logger.warning('Unable to find a bit file in %s, \
+                        use the -p/--pl option to point to the directory containing a .bit file' % args.pl)
+            elif len(bit) > 1:
+                raise Exception('Multiple bit files found in %s, \
+                        use the -p/--pl option to point to the directory containing a .bit file' % args.pl)
+            args.pl = bit[0]
+        if args.pl:
+            machine_override_string += '\n# %s bitstream path \n' % args.soc_family
+            machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % os.path.dirname(
+                args.pl)
+            machine_override_string += 'BITSTREAM_PATH = "${BITSTREAM_PATH_DIR}/%s"\n' % os.path.basename(
+                args.pl)
+            machine_override_string += 'BITSTREAM_PATH[vardepsexclude] += "BITSTREAM_PATH_DIR"\n'
 
     machine_override_string += '\n# Update bootbin to use proper device tree\n'
     machine_override_string += 'BIF_PARTITION_IMAGE[device-tree] = "${RECIPE_SYSROOT}/boot/devicetree/${@os.path.basename(d.getVar(\'CONFIG_DTFILE\').replace(\'.dts\', \'.dtb\'))}"\n'
