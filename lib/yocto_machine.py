@@ -481,7 +481,10 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
             elif len(bit) > 1:
                 raise Exception('Multiple bit files found in %s, \
                         use the -p/--pl option to point to the directory containing a .bit file' % args.pl)
-            args.pl = bit[0]
+            elif len(bit) == 1:
+                # Some Zynq and ZynqMP design can only PS without PL, in such
+                # cases do not inlcude BITSTREAM_PATH.
+                args.pl = bit[0]
         if args.pl:
             machine_override_string += '\n# %s bitstream path \n' % args.soc_family
             machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % os.path.dirname(
