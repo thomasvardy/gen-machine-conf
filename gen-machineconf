@@ -188,14 +188,33 @@ def main():
         # Make sure bitbake has started, if it's available:
         common_utils.startBitbake()
 
-        hw_dir = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+        try:
+            hw_dir = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+        except Exception as e:
+            logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
+
+            # Based on the args.output processing below
+            if not global_args.output:
+                global_args.output = os.path.join(os.getcwd(), 'output',
+                                   os.path.basename(global_args.hw_description).split('.')[0])
+            else:
+                global_args.output = os.path.realpath(global_args.output)
+            common_utils.CreateDir(global_args.output)
+
+            hw_dir = global_args.output
+            target = os.path.join(hw_dir, os.path.basename(global_args.hw_description))
+            shutil.copyfile(global_args.hw_description, target)
 
         # Validate the given hw_description and get xsct/sdt
         global_args.hw_flow, global_args.hw_file = validate_hwfile(hw_dir, _subparser)
 
-    if not _hassubcommand and not parserhelp:
-        unparsed_args.insert(0, 'parse-xsa' if global_args.hw_flow == 'xsct' else 'parse-sdt')
-    
+    if not _hassubcommand:
+        if not parserhelp:
+            unparsed_args.insert(0, 'parse-xsa' if global_args.hw_flow == 'xsct' else 'parse-sdt')
+        else:
+            logger.error('Unable to autodetect xsct or sdt flow, use parse-xsa or parse-sdt to define the flow')
+            return 1
+
     args = parser.parse_args(unparsed_args, namespace=global_args)
 
     # If user specified output directory use it if not add basename of hw_file

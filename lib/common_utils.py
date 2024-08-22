@@ -553,10 +553,6 @@ class bitbake():
     def fetchAndUnpackURI(self, uri):
         ''' Use bb.fetch2.Fetch to download the specified URL's
         and unpack to TOPDIR/hw-description if bitbake found.'''
-        if self.disabled or os.environ.get('PETALINUX'):
-            '''Return the same uri if no bitbake or PETALINUX evironment'''
-            return uri
-
         if os.path.exists(uri):
             # Add file:// prefix if its local file
             uri = 'file://%s' % os.path.abspath(uri)
