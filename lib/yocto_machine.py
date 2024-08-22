@@ -491,11 +491,19 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
                 args.pl = bit[0]
         if args.pl:
             machine_override_string += '\n# %s bitstream path \n' % args.soc_family
-            machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % os.path.dirname(
-                args.pl)
-            machine_override_string += 'BITSTREAM_PATH = "${BITSTREAM_PATH_DIR}/%s"\n' % os.path.basename(
-                args.pl)
-            machine_override_string += 'BITSTREAM_PATH[vardepsexclude] += "BITSTREAM_PATH_DIR"\n'
+            machine_override_string += 'BITSTREAM_PATH_DEPENDS = "sdt-artifacts"\n'
+
+            # This is similar to SYSTEM_DTFILE_PATH, the path is constructed
+            # by the sdt-artifacts recipe, it copies the contents of 'S'
+            # (SDT_URI[S] above) into the target ${datadir}/sdt/${MACHINE}/%s
+            # directory.
+            #
+            # Generally this means that the path will be EMPTY or a 'short' value for a directory
+            bitstream_path_dir = ("${RECIPE_SYSROOT}${datadir}/sdt/${MACHINE}/%s" % '').rstrip('/')
+
+            machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % bitstream_path_dir
+            machine_override_string += 'BITSTREAM_PATH = "${BITSTREAMPATH_DIR}/%s"\n' % \
+                                       os.path.basename(args.pl)
 
     machine_override_string += '\n# Update bootbin to use proper device tree\n'
     machine_override_string += 'BIF_PARTITION_IMAGE[device-tree] = "${RECIPE_SYSROOT}/boot/devicetree/${@os.path.basename(d.getVar(\'CONFIG_DTFILE\').replace(\'.dts\', \'.dtb\'))}"\n'
