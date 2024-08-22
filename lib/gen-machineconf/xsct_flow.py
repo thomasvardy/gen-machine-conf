@@ -107,18 +107,18 @@ def AddXsctUtilsPath(xsct_tool):
         else:
             os.environ["PATH"] += os.pathsep + os.path.join(xsct_tool, 'bin')
     else:
-        if not common_utils.HaveBitbake():
+        if common_utils.Bitbake.disabled:
             raise Exception('No --xsct-tool specified or bitbake command found '
                          'to get XILINX_SDK_TOOLCHAIN')
 
         try:
-            xilinx_xsct_tool = common_utils.GetBitbakeVars(['XILINX_SDK_TOOLCHAIN'])['XILINX_SDK_TOOLCHAIN']
+            xilinx_xsct_tool = common_utils.Bitbake.getVar('XILINX_SDK_TOOLCHAIN')
         except KeyError:
             raise Exception('Unable to get XILINX_SDK_TOOLCHAIN path, please verify meta-xilinx-tools layer is available.')
 
         if xilinx_xsct_tool and not os.path.isdir(xilinx_xsct_tool):
             logger.info('Installing xsct...')
-            common_utils.RunBitbakeCmd('xsct-native')
+            common_utils.Bitbake.runBitbakeCmd('xsct-native')
 
         if xilinx_xsct_tool and not os.path.isdir(xilinx_xsct_tool):
             raise Exception('Looking for xsct in "%s" but the path does not exist. '

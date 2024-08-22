@@ -134,7 +134,9 @@ def main():
         logger.debug('SKIP_BBPATH_SEARCH is set, Skip getting '
                         'BBPATH to load gen-machineconf modules')
     else:
-        bbpath = common_utils.GetBitbakeVars('BBPATH')
+        common_utils.startBitbake()
+
+        bbpath = common_utils.Bitbake.getVar('BBPATH')
         if not bbpath:
             bbpath = ''
 
@@ -183,7 +185,11 @@ def main():
             break
 
     if not parserhelp:
-        hw_dir = common_utils.FetchAndUnpackURI(global_args.hw_description)
+        # Make sure bitbake has started, if it's available:
+        common_utils.startBitbake()
+
+        hw_dir = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+
         # Validate the given hw_description and get xsct/sdt
         global_args.hw_flow, global_args.hw_file = validate_hwfile(hw_dir, _subparser)
 
@@ -239,5 +245,6 @@ if __name__ == "__main__":
             traceback.print_exc()
         logger.error(e)
     finally:
-        common_utils.ShutdownBitbake()
+        if common_utils.Bitbake:
+            del common_utils.Bitbake
     sys.exit(ret)

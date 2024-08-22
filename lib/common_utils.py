@@ -19,9 +19,12 @@ import subprocess
 import shutil
 import re
 import yaml
+import time
 
 logger = logging.getLogger('Gen-Machineconf')
 
+# Common bitbake variable
+Bitbake = None
 
 # Reference from OE-Core
 def load_plugins(plugins, pluginpath):
@@ -182,8 +185,9 @@ def FindNativeSysroot(recipe):
     if recipe in FindNativeSysroot.recipe_list:
         return
 
+    recipe_staging_dir = Bitbake.getVar('STAGING_DIR_NATIVE', recipe)
     try:
-        recipe_staging_dir = GetBitbakeVars(['STAGING_DIR_NATIVE'], recipe)['STAGING_DIR_NATIVE']
+        recipe_staging_dir = Bitbake.getVar('STAGING_DIR_NATIVE', recipe)
     except TypeError:
         recipe_staging_dir = None
     except KeyError:
@@ -198,7 +202,7 @@ def FindNativeSysroot(recipe):
         # Make sure the sysroot is available to us
         logger.info('Constructing %s recipe sysroot...' % recipe)
 
-        RunBitbakeCmd(recipe, "addto_recipe_sysroot")
+        Bitbake.runBitbakeCmd(recipe, "addto_recipe_sysroot")
 
         if not recipe_staging_dir:
             raise Exception("Unable to get %s sysroot path after building" % recipe)
@@ -417,125 +421,174 @@ def GetLopperUtilsPath():
 
     return lopper, lopper_dir, lops_dir, embeddedsw
 
+def startBitbake():
+    global Bitbake
+    if not Bitbake:
+        Bitbake = bitbake(True)
+        try:
+            Bitbake.initialize()
+        except Exception:
+            logger.warning("Bitbake is not available, some functionality may be reduced.")
 
-def HaveBitbake():
-    '''If bitbake is available, return True'''
+class bitbake():
+    disabled = False
+    tinfoil = None
+    tinfoilPrepared = False
+    recipes_parsed = False
+    prepare_args = None
 
-    if HaveBitbake.have_bitbake == None:
-        # Check if we can load bitbake, if so we can augment the plugin path
-        HaveBitbake.have_bitbake = False
+    def __init__(self, config_only=False, prefile=[]):
         try:
             import bb.tinfoil
-            HaveBitbake.have_bitbake = True
-        except:
-            pass
+        except Exception as e:
+            self.disabled = True
 
-    return HaveBitbake.have_bitbake
+        self.prepare_args = { 'config_only':config_only , 'prefile':prefile }
 
-def InitBitbake(recipes=False):
-    '''Initialize Bitbake (tinfoil) for use as a helper tool, you must shutodwn after you are done!'''
-    logger.debug('Initialize tinfoil...')
+    def __del__(self):
+        self.shutdown()
 
-    if HaveBitbake():
-        if not HaveBitbake.tinfoil:
-            HaveBitbake.tinfoil = bb.tinfoil.Tinfoil(tracking=False)
-            HaveBitbake.tinfoil.prepare(config_only=not recipes, quiet=2)
-            HaveBitbake.tinfoil_recipe = recipes
+    # Typlical flow:
+    #  initilize
+    #  prepare
+    #  parse_recipes (optional)
+    #  getVar/setVar
+    #
+    # Bitbake commands:
+    #  initialize
+    #  prepare
+    #  runBitbakeCmd
+    #
+    # Component Download:
+    #  initialize
+    #  prepare
+
+
+    def initialize(self):
+        if self.disabled:
+            raise Exception("Bitbake is not available")
+
+        self.tinfoil = bb.tinfoil.Tinfoil(tracking=False)
+        self.tinfoilPrepared = False
+
+    def shutdown(self):
+        logger.debug('Shutting down bitbake')
+
+        if self.tinfoil:
+            self.tinfoil.shutdown()
+            time.sleep(3)
+
+        self.tinfoil = None
+        self.tinfoilPrepared = False
+        self.recipes_parsed = False
+        # Do NOT reset prepare_args!
+
+    def prepare(self, config_only=False, prefile=[]):
+        self.prepare_args = { 'config_only':config_only , 'prefile':prefile }
+
+        if self.tinfoilPrepared == True:
+            logger.info('Configuration change, restarting bitbake')
+            self.shutdown()
+
+        if not self.tinfoil:
+            self.initialize()
+
+        self.tinfoilConfig = bb.tinfoil.TinfoilConfigParameters(config_only=config_only, quiet=2, prefile=prefile)
+        self.tinfoil.prepare(config_only=config_only, quiet=2, config_params=self.tinfoilConfig)
+        self.tinfoilPrepared = True
+        self.recipes_parsed = False
+
+    def prepare_again(self):
+        if self.prepare_args:
+            self.prepare(config_only=self.prepare_args['config_only'], prefile=self.prepare_args['prefile'])
         else:
-            if recipes and HaveBitbake.tinfoil_recipe == False:
-                HaveBitbake.tinfoil.parse_recipes()
-                HaveBitbake.tinfoil_recipe = True
+            self.prepare()
 
-# Default
-HaveBitbake.have_bitbake = None
+    def parse_recipes(self):
+        if not self.tinfoilPrepared:
+            self.prepare_again()
+        if not self.recipes_parsed:
+            # Emulate self.parse_recipes, but with our config
+            #self.tinfoil.parse_recipes()
+            self.tinfoil.run_actions(config_params=self.tinfoilConfig)
+            self.tinfoil.recipes_parsed = True
+            self.recipes_parsed = True
 
-HaveBitbake.tinfoil = None
-HaveBitbake.tinfoil_recipe = False
+    def getVar(self, variable, recipe=None):
+      '''Return back the values of bitbake variables with an optional recipe'''
+      if self.disabled:
+          return None
 
+      logger.debug('Getting bitbake variable %s' % variable)
 
-def FetchAndUnpackURI(uri):
-    ''' Use bb.fetch2.Fetch to download the specified URL's
-    and unpack to TOPDIR/hw-description if bitbake found.'''
-    if not HaveBitbake() or os.environ.get('PETALINUX'):
-        '''Return the same uri if no bitbake or PETALINUX evironment'''
-        return uri
+      d = None
+      if recipe:
+          if not self.recipes_parsed:
+              self.parse_recipes()
+          d = self.tinfoil.parse_recipe(recipe)
+      else:
+          if not self.tinfoilPrepared:
+              self.prepare()
+          d = self.tinfoil.config_data
 
-    if os.path.exists(uri):
-        # Add file:// prefix if its local file
-        uri = 'file://%s' % os.path.abspath(uri)
+      return d.getVar(variable)
 
-    InitBitbake(False)
-    d = HaveBitbake.tinfoil.config_data
-    localdata = d.createCopy()
-    # BB_STRICT_CHECKSUM - To skip the checksum for network files
-    localdata.setVar('BB_STRICT_CHECKSUM', 'ignore')
-    # PREMIRRORS,MIRRORS - Skip fetching from MIRRORS
-    localdata.setVar('PREMIRRORS', '')
-    localdata.setVar('MIRRORS', '')
-    fetcher = bb.fetch2.Fetch([uri], localdata)
-    fetcher.download()
+    def setVar(self, variable, value):
+        '''Set a bitbake variable. Note: this can NOT be used to set something that effects recipe parsing!'''
+        logger.debug('Set bitbake variable %s to %s' % (variable, value))
 
-    # Unpack to hw-description
-    hw_dir = os.path.join(localdata.getVar('TOPDIR'), 'hw-description')
-    RemoveDir(hw_dir)
-    CreateDir(hw_dir)
-    fetcher.unpack(hw_dir)
+        if not self.tinfoilPrepared:
+            self.prepare()
+        d = self.tinfoil.config_data
 
-    # Get the S from url if exists, Helps if the specified path or url has multiple
-    # SDT/XSA directories user can specify sub source directory. similar to
-    # S variable in bb files.
-    s_dir = ''
-    for url in fetcher.urls:
-        s_dir = fetcher.ud[url].parm.get('S')
+        d.setVar(variable, value)
 
-    if s_dir:
-        return os.path.join(hw_dir, s_dir)
-    else:
+    def runBitbakeCmd(self, recipe, task=None):
+        '''Run a bitbake command.  Note there is a bug that the prefile isn't evaluated prior to parsing if parse_recipes has been run.'''
+        '''This may require us to shutdown bitbake, and reconfigure WITHOUT recipe_parsed!'''
+        logger.debug('Running bitbake recipe %s (task %s)' % (recipe, task))
+
+        return self.tinfoil.build_targets(recipe, task)
+
+    def fetchAndUnpackURI(self, uri):
+        ''' Use bb.fetch2.Fetch to download the specified URL's
+        and unpack to TOPDIR/hw-description if bitbake found.'''
+        if self.disabled or os.environ.get('PETALINUX'):
+            '''Return the same uri if no bitbake or PETALINUX evironment'''
+            return uri
+
+        if os.path.exists(uri):
+            # Add file:// prefix if its local file
+            uri = 'file://%s' % os.path.abspath(uri)
+
+        if not self.tinfoilPrepared:
+            self.prepare_again()
+
+        d = self.tinfoil.config_data
+        localdata = d.createCopy()
+
+        # BB_STRICT_CHECKSUM - To skip the checksum for network files
+        localdata.setVar('BB_STRICT_CHECKSUM', 'ignore')
+        # PREMIRRORS,MIRRORS - Skip fetching from MIRRORS
+        localdata.setVar('PREMIRRORS', '')
+        localdata.setVar('MIRRORS', '')
+        fetcher = bb.fetch2.Fetch([uri], localdata)
+        fetcher.download()
+
+        # Unpack to hw-description
+        hw_dir = os.path.join(localdata.getVar('TOPDIR'), 'hw-description')
+        RemoveDir(hw_dir)
+        CreateDir(hw_dir)
+        fetcher.unpack(hw_dir)
+
+        # Get the S from url if exists, Helps if the specified path or url has multiple
+        # SDT/XSA directories user can specify sub source directory. similar to
+        # S variable in bb files.
+        s_dir = ''
+        for url in fetcher.urls:
+            s_dir = fetcher.ud[url].parm.get('S') or ''
+
+        if s_dir:
+            hw_dir = os.path.join(hw_dir, s_dir)
+
         return hw_dir
-
-
-def GetBitbakeVars(variables, recipe=None):
-    '''Return back the values of bitbake variables with an optional recipe'''
-    logger.debug('Getting bitbake variables %s' % ' '.join(variables))
-
-    if not HaveBitbake():
-        logger.debug('No bitbake found skip getting %s' % ''.join(variables))
-        if isinstance(variables, dict):
-            return {}
-        else:
-            return None
-
-    result = None
-    if recipe:
-        InitBitbake(True)
-        d = HaveBitbake.tinfoil.parse_recipe(recipe)
-    else:
-        InitBitbake(False)
-        d = HaveBitbake.tinfoil.config_data
-
-    if isinstance(variables, list):
-        result = {}
-        for each_var in variables:
-            result[each_var] = d.getVar(each_var)
-    else:
-        result = d.getVar(variables)
-
-    # How to process a recipe specific variable?
-    return result
-
-def RunBitbakeCmd(recipe, task=None):
-    '''Return back the values of bitbake variables with an optional recipe'''
-    logger.debug('Building %s and task %s' % (recipe, task))
-
-    if not HaveBitbake():
-        raise Exception('No bitbake found cannot build %s' % ''.join(recipe))
-
-    InitBitbake(True)
-
-    return HaveBitbake.tinfoil.build_targets(recipe, task)
-
-def ShutdownBitbake():
-    if HaveBitbake() and HaveBitbake.tinfoil:
-        HaveBitbake.tinfoil.shutdown()
-        HaveBitbake.tinfoil = None
-        HaveBitbake.tinfoil_recipe = False
