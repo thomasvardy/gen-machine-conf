@@ -65,7 +65,10 @@ def validate_hwfile(hw_description, subparser=None):
         raise Exception(
            'Only .xsa file or System Device-tree directory supported.')
     logger.info('Using HW file: %s' % hw_file)
-    return hw_ext, hw_file
+
+    hw_dir = os.path.relpath(os.path.dirname(hw_file), start=hw_description)
+
+    return hw_ext, hw_file, hw_dir
 
 
 def main():
@@ -188,8 +191,9 @@ def main():
         # Make sure bitbake has started, if it's available:
         common_utils.startBitbake()
 
+        localpath = ''
         try:
-            hw_dir = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+            hw_dir, global_args.src_uri, global_args.s_dir, localpath = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
         except bb.fetch2.FetchError as e:
             common_utils.Bitbake.shutdown()
             raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
@@ -207,9 +211,20 @@ def main():
             hw_dir = global_args.output
             target = os.path.join(hw_dir, os.path.basename(global_args.hw_description))
             shutil.copyfile(global_args.hw_description, target)
+            localpath = target
+
+            global_args.src_uri = 'file://%s' % (global_args.hw_description)
+            global_args.s_dir = '.'
 
         # Validate the given hw_description and get xsct/sdt
-        global_args.hw_flow, global_args.hw_file = validate_hwfile(hw_dir, _subparser)
+        global_args.hw_flow, global_args.hw_file, s_dir = validate_hwfile(hw_dir, _subparser)
+        if s_dir and s_dir != '.':
+            global_args.s_dir = os.path.join(global_args.s_dir or "", s_dir)
+            logger.debug('Update s_dir to %s' % global_args.s_dir)
+
+        if os.path.isfile(localpath):
+            global_args.sha256sum = common_utils.GetFileHashValue(localpath)
+            logger.debug('%s sha256sum is %s' % (global_args.hw_file, global_args.sha256sum))
 
     if not _hassubcommand:
         if not parserhelp:

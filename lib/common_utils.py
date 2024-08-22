@@ -584,10 +584,17 @@ class bitbake():
         # SDT/XSA directories user can specify sub source directory. similar to
         # S variable in bb files.
         s_dir = ''
+        localpath = ''
         for url in fetcher.urls:
             s_dir = fetcher.ud[url].parm.get('S') or ''
+            localpath = fetcher.ud[url].localpath
+            if url.startswith("file:///"):
+                base_sdir = os.path.dirname(uri[8:])
+                s_dir = os.path.join(base_sdir, s_dir)
+            elif url.startswith("git://"):
+                s_dir = os.path.join('git', s_dir)
 
         if s_dir:
             hw_dir = os.path.join(hw_dir, s_dir)
 
-        return hw_dir
+        return hw_dir, uri, s_dir, localpath
