@@ -143,6 +143,16 @@ def main():
         pluginpath = os.path.join(path, 'lib', 'gen-machineconf')
         common_utils.load_plugins(plugins, pluginpath)
 
+    if global_args.machine:
+        logger.debug('checking for machine %s' % global_args.machine)
+
+        for path in bbpath.split(':'):
+            check_path = os.path.join(path, 'conf/machine', global_args.machine + '.conf')
+            logger.debug('  checking %s' % check_path)
+            if os.path.exists(check_path) and check_path != os.path.join(global_args.config_dir, 'machine', global_args.machine + '.conf'):
+                logger.warning('A machine %s was found in %s, this may conflict with the machine you specified.  It is recommended to use a different name for your machine.' % (global_args.machine, check_path))
+                break
+
     # Register commands from plugins
     for plugin in plugins:
         if hasattr(plugin, 'register_commands'):
