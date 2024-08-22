@@ -435,6 +435,10 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += '\n# System Device Tree does not use HDF_MACHINE\n'
     machine_override_string += 'HDF_MACHINE = ""\n'
 
+    if args.psu_init_path != os.path.dirname(args.hw_file):
+        machine_override_string += '\n# Custom PSU_INIT_PATH artifacts URL\n'
+        machine_override_string += 'PSU_INIT_PATH = "%s"\n' % args.psu_init_path.rstrip('/')
+
     machine_override_string += '\n# Set the system device trees\n'
     machine_override_string += 'SYSTEM_DTFILE_DIR = "%s"\n' % os.path.dirname(
         args.hw_file)

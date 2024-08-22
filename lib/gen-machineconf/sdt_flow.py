@@ -182,10 +182,8 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             for psu_init_f in ['ps7_init.c', 'ps7_init.h']:
                 if not os.path.exists(os.path.join(
                         self.args.psu_init_path, psu_init_f)):
-                    logger.warning('Unable to find %s in %s' % (
+                    logger.error('Unable to find %s in %s' % (
                         psu_init_f, self.args.psu_init_path))
-            # This needs to be changes per fsbl-firmware recipe
-            extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
                 'Generating cortex-a9 baremetal configuration for core %s [ %s ]' % (self.core, self.domain))
@@ -199,9 +197,8 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             for psu_init_f in ['psu_init.c', 'psu_init.h']:
                 if not os.path.exists(os.path.join(
                         self.args.psu_init_path, psu_init_f)):
-                    logger.warning('Unable to find %s in %s' % (
+                    logger.error('Unable to find %s in %s' % (
                         psu_init_f, self.args.psu_init_path))
-            extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
                 'Generating cortex-a53 baremetal configuration for core %s [ %s ]' % (self.core, self.domain))
@@ -229,9 +226,8 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             for psu_init_f in ['psu_init.c', 'psu_init.h']:
                 if not os.path.exists(os.path.join(
                         self.args.psu_init_path, psu_init_f)):
-                    logger.warning('Unable to find %s in %s' % (
+                    logger.error('Unable to find %s in %s' % (
                         psu_init_f, self.args.psu_init_path))
-            extra_conf_str = 'PSU_INIT_PATH = "%s"\n' % self.args.psu_init_path
         else:
             logger.info(
                 'Generating cortex-r5 baremetal configuration for core %s [ %s ]' % (self.core, self.domain))
@@ -790,6 +786,8 @@ def ParseSDT(args):
 
     if not args.psu_init_path:
         args.psu_init_path = os.path.dirname(args.hw_file)
+    else:
+        logger.warning("Specifying the psu_init_path will result in a non-portable configuration.  For a portable configuration, adjust the ps init files within the SDT directory.")
 
     # Update PDI or bitstream path
     if not args.pl:
