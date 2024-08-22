@@ -446,7 +446,10 @@ class bitbake():
         self.prepare_args = { 'config_only':config_only , 'prefile':prefile }
 
     def __del__(self):
-        self.shutdown()
+        try:
+            self.shutdown()
+        except:
+            pass
 
     # Typlical flow:
     #  initilize

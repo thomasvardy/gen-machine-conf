@@ -190,6 +190,9 @@ def main():
 
         try:
             hw_dir = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+        except bb.fetch2.FetchError as e:
+            common_utils.Bitbake.shutdown()
+            raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
         except Exception as e:
             logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
 
