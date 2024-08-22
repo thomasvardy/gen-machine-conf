@@ -107,10 +107,6 @@ def AddXsctUtilsPath(xsct_tool):
         else:
             os.environ["PATH"] += os.pathsep + os.path.join(xsct_tool, 'bin')
     else:
-        if common_utils.Bitbake.disabled:
-            raise Exception('No --xsct-tool specified or bitbake command found '
-                         'to get XILINX_SDK_TOOLCHAIN')
-
         try:
             xilinx_xsct_tool = common_utils.Bitbake.getVar('XILINX_SDK_TOOLCHAIN')
         except KeyError:
@@ -126,7 +122,8 @@ def AddXsctUtilsPath(xsct_tool):
         elif xilinx_xsct_tool:
             os.environ["PATH"] += os.pathsep + xilinx_xsct_tool + '/bin'
 
-    xsct_exe = common_utils.check_tool('xsct', None, 'xsct command not found')
+    # XSCT can only be extracted if we've enabled XSCT
+    xsct_exe = common_utils.check_tool('xsct', 'xsct-native', 'xsct command not found, use --xsct-tool option to specify path')
     logger.debug('Using xsct from : %s' % xsct_exe)
 
 
@@ -224,6 +221,13 @@ SocCpuDict = {
 def ParseXsa(args):
     if args.hw_flow == 'sdt':
         raise Exception('Invalide HW source Specified for XSCT Flow.')
+
+    if not common_utils.Bitbake.disabled and common_utils.Bitbake.getVar('XILINX_WITH_ESW') != 'xsct':
+        logger.debug('XILINX_WITH_ESW = %s' % common_utils.Bitbake.getVar('XILINX_WITH_ESW'))
+        common_utils.Bitbake.prepare(prefile=[os.path.join(os.path.dirname(__file__),'../../gen-machine-scripts/data/yocto_esw_xsct.conf')])
+        logger.debug('XILINX_WITH_ESW = %s' % common_utils.Bitbake.getVar('XILINX_WITH_ESW'))
+        if common_utils.Bitbake.getVar('XILINX_WITH_ESW') != 'xsct':
+            raise Exception('XILINX_WITH_ESW must be set to "xsct".  Add the following to your local.conf file: XILINX_WITH_ESW = "xsct"')
 
     def LookupCpuInfoFromSocFam(proc_type):
         for id in SocCpuDict.keys():
