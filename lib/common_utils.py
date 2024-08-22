@@ -569,8 +569,8 @@ class bitbake():
         # BB_STRICT_CHECKSUM - To skip the checksum for network files
         localdata.setVar('BB_STRICT_CHECKSUM', 'ignore')
         # PREMIRRORS,MIRRORS - Skip fetching from MIRRORS
-        localdata.setVar('PREMIRRORS', '')
-        localdata.setVar('MIRRORS', '')
+        #localdata.setVar('PREMIRRORS', '')
+        #localdata.setVar('MIRRORS', '')
         fetcher = bb.fetch2.Fetch([uri], localdata)
         fetcher.download()
 
