@@ -244,12 +244,6 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
 def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, MultiConfDict):
     machine_override_string = ''
 
-    machine_override_string += '\n# This is an \'XSCT\' based BSP\n'
-    xsct_version = common_utils.Bitbake.getVar('XILINX_XSCT_VERSION')
-    if xsct_version:
-        machine_override_string += 'XILINX_XSCT_VERSION = "%s"\n' % xsct_version
-    machine_override_string += 'XILINX_WITH_ESW = "xsct"\n'
-
     soc_family = args.soc_family
     soc_variant = args.soc_variant
 
@@ -412,12 +406,45 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mu
         machine_override_string += 'YAML_SERIAL_CONSOLE_BAUDRATE ?= "%s"\n' \
                                    % baudrate
 
+    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
+
+    # Variables that changes based on hw design or board specific requirement must be
+    # defined before calling the required inclusion file else pre-expansion value
+    # defined in respective generic machine conf will be set.
+    machine_override_string += '\n# Required generic machine inclusion\n'
+    machine_override_string += 'require conf/machine/%s.conf\n' % \
+        req_conf_file
+
+    machine_override_string += '\n# This is an \'XSCT\' based BSP\n'
+    xsct_version = common_utils.Bitbake.getVar('XILINX_XSCT_VERSION')
+    if xsct_version:
+        machine_override_string += 'XILINX_XSCT_VERSION = "%s"\n' % xsct_version
+    machine_override_string += 'XILINX_WITH_ESW = "xsct"\n'
+
     # Variable used for Vivado XSA path, name using local file or subversion
     # path
     machine_override_string += '\n# Add system XSA\n'
-    machine_override_string += 'HDF_EXT = "xsa"\n'
-    machine_override_string += 'HDF_BASE = "file://"\n'
-    machine_override_string += 'HDF_PATH = "%s"\n' % args.hw_file
+    machine_override_string += 'HDF_URI = "%s"\n' % args.src_uri
+    try:
+        machine_override_string += 'HDF_URI[sha256sum] = "%s"\n' % args.sha256sum
+    except AttributeError:
+        raise Exception('XSA workflow requires a sha256sum to have been computed.')
+    if args.s_dir:
+        machine_override_string += 'HDF_URI[S] = "%s"\n' % os.path.join("${WORKDIR}", args.s_dir).rstrip('/')
+
+    return machine_override_string
+
+
+def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, MultiConfDict):
+    machine_override_string = ''
+
+    config_dtfile = MultiConfDict.get('LinuxDT')
+    config_dtfile = os.path.relpath(config_dtfile, start=args.config_dir)
+
+    machine_override_string += '\n# Set the default (linux) domain device tree\n'
+    machine_override_string += 'CONFIG_DTFILE_DIR := "${@bb.utils.which(d.getVar(\'BBPATH\'), \'conf/%s\')}"\n' % os.path.dirname(config_dtfile)
+    machine_override_string += 'CONFIG_DTFILE ?= "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(config_dtfile)
+    machine_override_string += 'CONFIG_DTFILE[vardepsexclude] += "CONFIG_DTFILE_DIR"\n'
 
     machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
 
@@ -428,36 +455,34 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mu
     machine_override_string += 'require conf/machine/%s.conf\n' % \
         req_conf_file
 
-    return machine_override_string
-
-
-def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, MultiConfDict):
-    machine_override_string = ''
-
     machine_override_string += '\n# This is an \'SDT\' based BSP\n'
     machine_override_string += 'XILINX_WITH_ESW = "sdt"\n'
+
+    # Handle the URL passed to us
+    machine_override_string += '\n# Original SDT artifacts URL\n'
+    machine_override_string += 'SDT_URI = "%s"\n' % args.src_uri
+    # A local directory could be used instead
+    if hasattr(args, 'sha256sum'):
+        machine_override_string += 'SDT_URI[sha256sum] = "%s"\n' % args.sha256sum
+    if args.s_dir:
+        machine_override_string += 'SDT_URI[S] = "%s"\n' % os.path.join("${WORKDIR}", args.s_dir).rstrip('/')
 
     if args.psu_init_path != os.path.dirname(args.hw_file):
         machine_override_string += '\n# Custom PSU_INIT_PATH artifacts URL\n'
         machine_override_string += 'PSU_INIT_PATH = "%s"\n' % args.psu_init_path.rstrip('/')
 
+    # The system_dt_dir is constructed by the sdt-artifacts recipe, it copies
+    # the contents of 'S' (SDT_URI[S] above) into the target 
+    # ${datadir}/sdt/${MACHINE}/%s directory.
+    #
+    # Generally this means that the path will be EMPTY or a 'short' value for a directory
+    system_dt_file = ("${RECIPE_SYSROOT}${datadir}/sdt/${MACHINE}/%s" % '').rstrip('/')
+
     machine_override_string += '\n# Set the system device trees\n'
-    machine_override_string += 'SYSTEM_DTFILE_DEPENDS = ""\n'
-    machine_override_string += 'SYSTEM_DTFILE_DIR = "%s"\n' % os.path.dirname(
-        args.hw_file)
-    machine_override_string += 'SYSTEM_DTFILE = "${SYSTEM_DTFILE_DIR}/%s"\n' % os.path.basename(
-        args.hw_file)
-    machine_override_string += 'SYSTEM_DTFILE[vardepsexclude] += "SYSTEM_DTFILE_DIR"\n'
-
-    machine_override_string += '\n# Set the default (linux) domain device tree\n'
-    machine_override_string += 'CONFIG_DTFILE_DIR = "%s"\n' % os.path.dirname(
-        MultiConfDict.get('LinuxDT'))
-    machine_override_string += 'CONFIG_DTFILE ?= "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(
-        MultiConfDict.get('LinuxDT'))
-    machine_override_string += 'CONFIG_DTFILE[vardepsexclude] += "CONFIG_DTFILE_DIR"\n'
-
-    machine_override_string += '\n# System Device Tree does not use HDF_MACHINE\n'
-    machine_override_string += 'HDF_MACHINE = ""\n'
+    machine_override_string += 'SYSTEM_DTFILE_DEPENDS = "sdt-artifacts"\n'
+    machine_override_string += 'SYSTEM_DTFILE_DIR = "%s"\n' % system_dt_file
+    machine_override_string += 'SYSTEM_DTFILE = "${SYSTEM_DTFILE_DIR}/%s"\n' % \
+                               os.path.basename(args.hw_file)
 
     machine_override_string += '\n# Load the dynamic machine features\n'
     machine_override_string += 'include conf/machine/include/%s/${BB_CURRENT_MC}-features.conf\n' % args.machine
@@ -482,22 +507,19 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
                         'Multiple PDI files found, using the first available pdi %s', pdis[0])
             args.pl = pdis[0]
         if args.pl:
+            # This is similar to SYSTEM_DTFILE_PATH, the path is constructed
+            # by the sdt-artifacts recipe, it copies the contents of 'S'
+            # (SDT_URI[S] above) into the target ${datadir}/sdt/${MACHINE}/%s
+            # directory.
+            #
+            # Generally this means that the path will be EMPTY or a 'short' value for a directory
+            pdi_path_dir = ("${RECIPE_SYSROOT}${datadir}/sdt/${MACHINE}/%s" % '').rstrip('/')
+
             machine_override_string += '\n# Versal PDI\n'
             machine_override_string += 'PDI_PATH_DEPENDS = "sdt-artifacts"\n'
-            machine_override_string += 'PDI_PATH_DIR = "%s"\n' % os.path.dirname(
-                args.pl)
-            machine_override_string += 'PDI_PATH = "${PDI_PATH_DIR}/%s"\n' % os.path.basename(
-                args.pl)
-            machine_override_string += 'PDI_PATH[vardepsexclude] += "PDI_PATH_DIR"\n'
-
-    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
-
-    # Variables that changes based on hw design or board specific requirement must be
-    # defined before calling the required inclusion file else pre-expansion value
-    # defined in respective generic machine conf will be set.
-    machine_override_string += '\n# Required generic machine inclusion\n'
-    machine_override_string += 'require conf/machine/%s.conf\n' % \
-        req_conf_file
+            machine_override_string += 'PDI_PATH_DIR = "%s"\n' % pdi_path_dir
+            machine_override_string += 'PDI_PATH = "${PDI_PATH_DIR}/%s"\n' % \
+                                       os.path.basename(args.pl)
 
     if args.soc_family in ['zynqmp', 'zynq'] and not args.gen_pl_overlay:
         if os.path.isdir(args.pl):
@@ -513,13 +535,19 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
                 # cases do not inlcude BITSTREAM_PATH.
                 args.pl = bit[0]
         if args.pl:
+            # This is similar to SYSTEM_DTFILE_PATH, the path is constructed
+            # by the sdt-artifacts recipe, it copies the contents of 'S'
+            # (SDT_URI[S] above) into the target ${datadir}/sdt/${MACHINE}/%s
+            # directory.
+            #
+            # Generally this means that the path will be EMPTY or a 'short' value for a directory
+            bitstream_path_dir = ("${RECIPE_SYSROOT}${datadir}/sdt/${MACHINE}/%s" % '').rstrip('/')
+
             machine_override_string += '\n# %s bitstream path \n' % args.soc_family
             machine_override_string += 'BITSTREAM_PATH_DEPENDS = "sdt-artifacts"\n'
-            machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % os.path.dirname(
-                args.pl)
-            machine_override_string += 'BITSTREAM_PATH = "${BITSTREAM_PATH_DIR}/%s"\n' % os.path.basename(
-                args.pl)
-            machine_override_string += 'BITSTREAM_PATH[vardepsexclude] += "BITSTREAM_PATH_DIR"\n'
+            machine_override_string += 'BITSTREAM_PATH_DIR = "%s"\n' % bitstream_path_dir
+            machine_override_string += 'BITSTREAM_PATH = "${BITSTREAM_PATH_DIR}/%s"\n' % \
+                                       os.path.basename(args.pl)
 
     machine_override_string += '\n# Update bootbin to use proper device tree\n'
     machine_override_string += 'BIF_PARTITION_IMAGE[device-tree] = "${RECIPE_SYSROOT}/boot/devicetree/${@os.path.basename(d.getVar(\'CONFIG_DTFILE\').replace(\'.dts\', \'.dtb\'))}"\n'

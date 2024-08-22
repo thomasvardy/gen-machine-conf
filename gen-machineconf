@@ -239,13 +239,19 @@ def main():
             if '://' in global_args.hw_description:
                 if not global_args.hw_description.startswith('file://'):
                     raise Exception('Unable to fetch URI, URI fetching requires bitbake.')
-                global_args.src_uri = global_args.hw_description
-            else:
-                global_args.src_uri = 'file://%s' % (global_args.hw_description)
 
-            hw_dir = os.path.dirname(global_args.src_uri[7:])
+                # Strip the file:// off
+                global_args.hw_description = global_args.hw_description[7:]
 
-            global_args.s_dir = '.'
+            # PetaLinux workflow expects the hw_description path to be where we load and process from
+            hw_dir = os.path.dirname(global_args.hw_description)
+            localpath = global_args.hw_description
+
+            global_args.src_uri = 'file://%s' % (global_args.hw_description)
+
+            # A file path ends up 'downloading' in a recipe with the full path,
+            # so the s_dir needs to have the dirname, but without a any leading '/'
+            global_args.s_dir = hw_dir.lstrip('/')
         else:
             try:
                 hw_dir, global_args.src_uri, global_args.s_dir, localpath = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
@@ -282,7 +288,10 @@ def main():
                     localpath = target
 
                 global_args.src_uri = 'file://%s' % (global_args.hw_description)
-                global_args.s_dir = '.'
+
+                # A file path ends up 'downloading' in a recipe with the full path,
+                # so the s_dir needs to have the dirname, but without a any leading '/'
+                global_args.s_dir = os.path.dirname(global_args.hw_description).lstrip('/')
 
         # Validate the given hw_description and get xsct/sdt
         global_args.hw_flow, global_args.hw_file, s_dir = validate_hwfile(hw_dir, _subparser)
@@ -292,7 +301,9 @@ def main():
 
         if os.path.isfile(localpath):
             global_args.sha256sum = common_utils.GetFileHashValue(localpath)
-            logger.debug('%s sha256sum is %s' % (global_args.hw_file, global_args.sha256sum))
+            logger.debug('%s sha256sum is %s' % (localpath, global_args.sha256sum))
+        else:
+            logger.debug('%s is a directory, no sha256sum' % (localpath))
 
         if not _hassubcommand:
             if global_args.hw_flow == 'xsct':
