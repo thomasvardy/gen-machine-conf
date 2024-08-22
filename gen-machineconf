@@ -40,17 +40,28 @@ def validate_hwfile(hw_description, subparser=None):
         hw_file = hw_description
     elif os.path.isdir(hw_description):
         XsaFiles = SDTFiles = []
-        if subparser != 'parse-sdt':
+        if subparser:
+            if subparser == 'parse-xsa':
+                XsaFiles = common_utils.GetFilesFromDir(hw_description, '.xsa')
+                if not XsaFiles:
+                     raise Exception('parse-xsa: No .xsa file found in specified directory %s' % hw_description)
+            elif subparser == 'parse-sdt':
+                SDTFiles = common_utils.GetFilesFromDir(hw_description, 'system-top.dts')
+                if not SDTFiles:
+                    raise Exception('parse-sdt: No system-top.dts file found in specified directory %s' % hw_description)
+        else:
             XsaFiles = common_utils.GetFilesFromDir(hw_description, '.xsa')
-        if subparser != 'parse-xsa':
             SDTFiles = common_utils.GetFilesFromDir(hw_description, 'system-top.dts')
-        if not XsaFiles and not SDTFiles:
-            raise Exception('No .xsa or system-top.dts file found in specified directory %s' % hw_description)
-        elif len(XsaFiles) > 1:
+            if not XsaFiles and not SDTFiles:
+                raise Exception('No .xsa or system-top.dts file found in specified directory %s' % hw_description)
+
+        if len(XsaFiles) > 1:
             raise Exception('More than one .xsa files found in specified directory %s' % hw_description)
-        elif len(SDTFiles) > 1:
+
+        if len(SDTFiles) > 1:
             raise Exception('More than one system-top.dts files found in specified directory %s' % hw_description)
-        elif XsaFiles and SDTFiles:
+
+        if XsaFiles and SDTFiles:
             logger.info('Both .xsa and .dts files found in specified directory %s' % hw_description)
             logger.info('Using system-top.dts file as default %s' % SDTFiles[0])
             hw_ext = 'sdt'
@@ -226,12 +237,16 @@ def main():
             global_args.sha256sum = common_utils.GetFileHashValue(localpath)
             logger.debug('%s sha256sum is %s' % (global_args.hw_file, global_args.sha256sum))
 
-    if not _hassubcommand:
-        if not parserhelp:
-            unparsed_args.insert(0, 'parse-xsa' if global_args.hw_flow == 'xsct' else 'parse-sdt')
-        else:
-            logger.error('Unable to autodetect xsct or sdt flow, use parse-xsa or parse-sdt to define the flow')
-            return 1
+        if not _hassubcommand:
+            if global_args.hw_flow == 'xsct':
+                unparsed_args.insert(0, 'parse-xsa')
+                _hassubcommand = True
+            elif global_args.hw_flow == 'sdt':
+                unparsed_args.insert(0, 'parse-sdt')
+                _hassubcommand = True
+            else:
+                logger.error('Unable to autodetect xsct or sdt flow, use parse-xsa or parse-sdt to define the flow')
+                return 1
 
     args = parser.parse_args(unparsed_args, namespace=global_args)
 
