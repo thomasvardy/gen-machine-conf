@@ -102,7 +102,7 @@ def CopyDir(indir, outdir, exclude=''):
         copycmd = "tar --xattrs --xattrs-include='*' --exclude='%s' \
                 -cf - -S -C %s -p . | tar --xattrs --xattrs-include='*' \
                 -xf - -C %s" % (exclude, indir, outdir)
-        runCmd(copycmd, os.getcwd(), shell=True)
+        RunCmd(copycmd, os.getcwd(), shell=True)
 
 
 def CopyFile(infile, dest, follow_symlinks=False):

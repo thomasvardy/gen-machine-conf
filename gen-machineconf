@@ -205,27 +205,32 @@ def main():
         localpath = ''
         try:
             hw_dir, global_args.src_uri, global_args.s_dir, localpath = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
-        except bb.fetch2.FetchError as e:
-            common_utils.Bitbake.shutdown()
-            raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
         except Exception as e:
-            logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
+            try:
+                import bb.fetch2
+                common_utils.Bitbake.shutdown()
+                raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
+            except:
+                logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
 
-            # Based on the args.output processing below
-            if not global_args.output:
-                global_args.output = os.path.join(os.getcwd(), 'output',
-                                   os.path.basename(global_args.hw_description).split('.')[0])
-            else:
-                global_args.output = os.path.realpath(global_args.output)
-            common_utils.CreateDir(global_args.output)
+                # Based on the args.output processing below
+                if not global_args.output:
+                    global_args.output = os.path.join(os.getcwd(), 'output',
+                                       os.path.basename(global_args.hw_description).split('.')[0])
+                else:
+                    global_args.output = os.path.realpath(global_args.output)
+                common_utils.CreateDir(global_args.output)
 
-            hw_dir = global_args.output
-            target = os.path.join(hw_dir, os.path.basename(global_args.hw_description))
-            shutil.copyfile(global_args.hw_description, target)
-            localpath = target
+                hw_dir = global_args.output
+                target = os.path.join(hw_dir, os.path.basename(global_args.hw_description.strip('/')))
+                if os.path.isfile(global_args.hw_description):
+                    common_utils.CopyFile(global_args.hw_description, target)
+                elif os.path.isdir(global_args.hw_description):
+                    common_utils.CopyDir(global_args.hw_description, target)
+                localpath = target
 
-            global_args.src_uri = 'file://%s' % (global_args.hw_description)
-            global_args.s_dir = '.'
+                global_args.src_uri = 'file://%s' % (global_args.hw_description)
+                global_args.s_dir = '.'
 
         # Validate the given hw_description and get xsct/sdt
         global_args.hw_flow, global_args.hw_file, s_dir = validate_hwfile(hw_dir, _subparser)
