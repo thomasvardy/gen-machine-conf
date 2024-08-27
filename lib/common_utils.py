@@ -185,7 +185,7 @@ def FindNativeSysroot(recipe):
     if recipe in FindNativeSysroot.recipe_list:
         return
 
-    recipe_staging_dir = Bitbake.getVar('STAGING_DIR_NATIVE', recipe)
+    recipe_staging_dir = None
     try:
         recipe_staging_dir = Bitbake.getVar('STAGING_DIR_NATIVE', recipe)
     except TypeError:
@@ -193,7 +193,7 @@ def FindNativeSysroot(recipe):
     except KeyError:
         recipe_staging_dir = None
     except Exception as e:
-        raise Exception("Unable to get required sysroot path.\n%s" % e)
+        raise Exception("Unable to get required %s sysroot path.\nError: %s" % (recipe, e))
 
     if not recipe_staging_dir:
         raise Exception("Unable to get required %s sysroot path" % recipe)
@@ -430,6 +430,16 @@ def startBitbake():
         except Exception:
             logger.warning("Bitbake is not available, some functionality may be reduced.")
 
+class FetchError(Exception):
+    """Fetch exception transfered from bitbake"""
+    def __init__(self, message, url = None):
+        if url:
+            msg = "Fetcher failure for URL: '%s'. %s" % (url, message)
+        else:
+            msg = "Fetcher failure: %s" % message
+        Exception.__init__(self, msg)
+        self.args = (message, url)
+
 class bitbake():
     disabled = False
     tinfoil = None
@@ -571,14 +581,17 @@ class bitbake():
         # PREMIRRORS,MIRRORS - Skip fetching from MIRRORS
         #localdata.setVar('PREMIRRORS', '')
         #localdata.setVar('MIRRORS', '')
-        fetcher = bb.fetch2.Fetch([uri], localdata)
-        fetcher.download()
+        try:
+            fetcher = bb.fetch2.Fetch([uri], localdata)
+            fetcher.download()
 
-        # Unpack to hw-description
-        hw_dir = os.path.join(localdata.getVar('TOPDIR'), 'hw-description')
-        RemoveDir(hw_dir)
-        CreateDir(hw_dir)
-        fetcher.unpack(hw_dir)
+            # Unpack to hw-description
+            hw_dir = os.path.join(localdata.getVar('TOPDIR'), 'hw-description')
+            RemoveDir(hw_dir)
+            CreateDir(hw_dir)
+            fetcher.unpack(hw_dir)
+        except bb.fetch2.FetchError as e:
+            raise FetchError(message=e, url=uri)
 
         # Get the S from url if exists, Helps if the specified path or url has multiple
         # SDT/XSA directories user can specify sub source directory. similar to

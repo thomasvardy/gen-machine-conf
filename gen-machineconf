@@ -148,11 +148,15 @@ def main():
         logger.debug('SKIP_BBPATH_SEARCH is set, Skip getting '
                         'BBPATH to load gen-machineconf modules')
     else:
-        common_utils.startBitbake()
-
-        bbpath = common_utils.Bitbake.getVar('BBPATH')
-        if not bbpath:
-            bbpath = ''
+        bbpath = ''
+        try:
+            common_utils.startBitbake()
+            bbpath = common_utils.Bitbake.getVar('BBPATH') or ''
+        except Exception as e:
+            logger.warning('Bitbake is unavailable due to an error.  Continuing without bitbake.')
+            # It's clearly broken!
+            common_utils.Bitbake.shutdown()
+            common_utils.Bitbake.disabled = True
 
     # Load the plugins from BBPATH and lib/gen-machineconf directory
     for path in bbpath.split(':') + [scripts_path]:
@@ -203,34 +207,54 @@ def main():
         common_utils.startBitbake()
 
         localpath = ''
+
+        # User passed in a path, make sure it's turned into an absolute,
+        # non-relative path, and verify it's valid!
+        if '://' not in global_args.hw_description:
+            path = global_args.hw_description
+            if not path.startswith('/'):
+                path = os.path.abspath(path)
+            if not os.path.exists(path):
+                raise Exception('Unable to find hw_description %s' % path)
+            path = os.path.realpath(path)
+            global_args.hw_description = path
+
         try:
             hw_dir, global_args.src_uri, global_args.s_dir, localpath = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
+        except common_utils.FetchError as e:
+            common_utils.Bitbake.shutdown()
+            raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
         except Exception as e:
-            try:
-                import bb.fetch2
-                common_utils.Bitbake.shutdown()
-                raise Exception('Unable to fetch %s: %s' % (global_args.hw_description, e))
-            except:
-                logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
+            logger.debug('Unable to fetch with bitbake, falling back to copy: %s' % e)
 
-                # Based on the args.output processing below
-                if not global_args.output:
-                    global_args.output = os.path.join(os.getcwd(), 'output',
-                                       os.path.basename(global_args.hw_description).split('.')[0])
-                else:
-                    global_args.output = os.path.realpath(global_args.output)
-                common_utils.CreateDir(global_args.output)
+            # We can only copy actual file paths, not URIs.
+            if '://' in global_args.hw_description:
+                if not global_args.hw_description.startswith('file://'):
+                    raise Exception('Unable to fetch URI, URI fetching requires bitbake.')
 
-                hw_dir = global_args.output
-                target = os.path.join(hw_dir, os.path.basename(global_args.hw_description.strip('/')))
-                if os.path.isfile(global_args.hw_description):
-                    common_utils.CopyFile(global_args.hw_description, target)
-                elif os.path.isdir(global_args.hw_description):
-                    common_utils.CopyDir(global_args.hw_description, target)
+                # Strip the file:// off
+                global_args.hw_description = global_args.hw_description[7:]
+
+            # Based on the args.output processing below
+            if not global_args.output:
+                global_args.output = os.path.join(os.getcwd(), 'output',
+                                   os.path.basename(global_args.hw_description).split('.')[0])
+            else:
+                global_args.output = os.path.realpath(global_args.output)
+            common_utils.CreateDir(global_args.output)
+
+            hw_dir = global_args.output
+            target = os.path.join(hw_dir, os.path.basename(global_args.hw_description))
+
+            if os.path.isdir(global_args.hw_description):
+                shutil.copytree(global_args.hw_description, target, dirs_exist_ok=True)
+                localpath = target
+            else:
+                shutil.copyfile(global_args.hw_description, target)
                 localpath = target
 
-                global_args.src_uri = 'file://%s' % (global_args.hw_description)
-                global_args.s_dir = '.'
+            global_args.src_uri = 'file://%s' % (global_args.hw_description)
+            global_args.s_dir = '.'
 
         # Validate the given hw_description and get xsct/sdt
         global_args.hw_flow, global_args.hw_file, s_dir = validate_hwfile(hw_dir, _subparser)
