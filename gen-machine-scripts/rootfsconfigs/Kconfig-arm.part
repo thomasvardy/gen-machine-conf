@@ -8610,30 +8610,6 @@ config packagegroup-opencv-dev
          help
 
 endmenu
-menu "packagegroup-python-modules "
-config packagegroup-python-modules
-         bool "packagegroup-python-modules"
-         help
-	 Includes python module packages
-		python3-pip
-		python-pip 
-		python3-multiprocessing
-		python-numpy 
-		python-scons 
-		python3-shell
-		python3-threading
-		python3-pyserial 
-		python-pyserial	
-
-config packagegroup-python-modules-dbg
-         bool "packagegroup-python-modules-dbg"
-         help
-
-config packagegroup-python-modules-dev
-         bool "packagegroup-python-modules-dev"
-         help
-
-endmenu
 menu "packagegroup-xilinx-qt "
 config packagegroup-xilinx-qt
          bool "packagegroup-xilinx-qt"
