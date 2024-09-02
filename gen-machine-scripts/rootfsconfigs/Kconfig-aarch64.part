@@ -5476,6 +5476,12 @@ menu "hdmi-module"
 config kernel-module-hdmi
 	 bool "kernel-module-hdmi"
 	 help
+	 Out-of-tree HDMI kernel modules provider for MPSoC EG/EV devices
+
+config kernel-module-hdmi21
+	 bool "kernel-module-hdmi21"
+	 help
+	 Out-of-tree HDMI 2.1 FMC kernel modules provider for aarch64 devices
 
 endmenu
 menu "icu " 
