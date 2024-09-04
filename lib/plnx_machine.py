@@ -665,11 +665,11 @@ def GeneratePlnxConfig(args, machine_conf_file):
                        'virtual/elfrealloc', 'u-boot-xlnx-scr'],
         'zynq': ['virtual/bootloader', 'virtual/fsbl', 'u-boot-xlnx-scr'],
         'zynqmp': ['virtual/bootloader', 'virtual/fsbl', 'virtual/pmu-firmware',
-                   'arm-trusted-firmware', 'qemu-devicetrees', 'pmu-rom-native',
+                   'arm-trusted-firmware', 'qemu-devicetrees-native', 'pmu-rom-native',
                    'u-boot-xlnx-scr'],
         'versal': ['virtual/bootloader', 'virtual/psm-firmware', 'virtual/plm',
                    'arm-trusted-firmware', 'u-boot-xlnx-scr',
-                   'qemu-devicetrees', 'extract-cdo'],
+                   'qemu-devicetrees-native', 'extract-cdo'],
     }
     imagedepends_remove = ['virtual/boot-bin']
     is_imgsel = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_IMG_SEL',
