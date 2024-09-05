@@ -447,7 +447,7 @@ def GenConf_flash(IpsToAdd, slavesdict, proc_ipname, arch):
 
         flashconfstr += '\nconfig %s_IP_NAME\n' % flash_Kconf
         flashconfstr += '\tstring\n'
-        if slave == 'axi_emc_0_bank0':
+        if re.search(r'.*_bank0', slave):
             flaship = re.sub('_bank0$', '', slave)
             flashconfstr += '\tdefault %s\n' % flaship
         else:
