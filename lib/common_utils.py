@@ -198,7 +198,7 @@ def FindNativeSysroot(recipe):
     if not recipe_staging_dir:
         raise Exception("Unable to get required %s sysroot path" % recipe)
 
-    if not os.path.exists(recipe_staging_dir):
+    if recipe and not os.path.exists(recipe_staging_dir):
         # Make sure the sysroot is available to us
         logger.info('Constructing %s recipe sysroot...' % recipe)
 
@@ -497,7 +497,12 @@ class bitbake():
         # Do NOT reset prepare_args!
 
     def prepare(self, config_only=False, prefile=[]):
+        logger.debug('Prepare bitbake')
+
         self.prepare_args = { 'config_only':config_only , 'prefile':prefile }
+
+        if self.disabled:
+            return
 
         if self.tinfoilPrepared == True:
             logger.info('Configuration change, restarting bitbake')
@@ -512,17 +517,30 @@ class bitbake():
         self.recipes_parsed = False
 
     def prepare_again(self):
+        logger.debug('Prepare bitbake again (configuration change)')
+
+        if self.disabled:
+            return
+
         if self.prepare_args:
             self.prepare(config_only=self.prepare_args['config_only'], prefile=self.prepare_args['prefile'])
         else:
             self.prepare()
 
     def parse_recipes(self):
+        logger.debug('Bitbake parsing recipes')
+
+        if self.disabled:
+            return
+
         if not self.tinfoilPrepared:
             self.prepare_again()
         if not self.recipes_parsed:
             # Emulate self.parse_recipes, but with our config
             #self.tinfoil.parse_recipes()
+            # run_actions requires config_only set to False
+            self.prepare_args['config_only'] = False
+            self.tinfoilConfig = bb.tinfoil.TinfoilConfigParameters(config_only=self.prepare_args['config_only'], quiet=2, prefile=self.prepare_args['prefile'])
             self.tinfoil.run_actions(config_params=self.tinfoilConfig)
             self.tinfoil.recipes_parsed = True
             self.recipes_parsed = True
@@ -532,7 +550,7 @@ class bitbake():
       if self.disabled:
           return None
 
-      logger.debug('Getting bitbake variable %s' % variable)
+      logger.debug('Getting bitbake variable %s from %s' % (variable, recipe))
 
       d = None
       if recipe:
@@ -550,6 +568,9 @@ class bitbake():
         '''Set a bitbake variable. Note: this can NOT be used to set something that effects recipe parsing!'''
         logger.debug('Set bitbake variable %s to %s' % (variable, value))
 
+        if self.disabled:
+            return
+
         if not self.tinfoilPrepared:
             self.prepare()
         d = self.tinfoil.config_data
@@ -561,11 +582,17 @@ class bitbake():
         '''This may require us to shutdown bitbake, and reconfigure WITHOUT recipe_parsed!'''
         logger.debug('Running bitbake recipe %s (task %s)' % (recipe, task))
 
+        if self.disabled:
+            raise Exception("Bitbake is unavailable to build task %s from recipe %s" % (task, recipe))
+
         return self.tinfoil.build_targets(recipe, task)
 
     def fetchAndUnpackURI(self, uri):
         ''' Use bb.fetch2.Fetch to download the specified URL's
         and unpack to TOPDIR/hw-description if bitbake found.'''
+        if self.disabled:
+            return Exception("Bitbake is unavailable to run fetch and download.")
+
         if os.path.exists(uri):
             # Add file:// prefix if its local file
             uri = 'file://%s' % os.path.abspath(uri)

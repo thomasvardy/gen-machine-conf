@@ -222,7 +222,8 @@ def ParseXsa(args):
     if args.hw_flow == 'sdt':
         raise Exception('Invalide HW source Specified for XSCT Flow.')
 
-    if not common_utils.Bitbake.disabled and common_utils.Bitbake.getVar('XILINX_WITH_ESW') != 'xsct':
+    if not 'PETALINUX' in os.environ.keys() and \
+       not common_utils.Bitbake.disabled and common_utils.Bitbake.getVar('XILINX_WITH_ESW') != 'xsct':
         logger.debug('XILINX_WITH_ESW = %s' % common_utils.Bitbake.getVar('XILINX_WITH_ESW'))
         common_utils.Bitbake.prepare(prefile=[os.path.join(os.path.dirname(__file__),'../../gen-machine-scripts/data/yocto_esw_xsct.conf')])
         logger.debug('XILINX_WITH_ESW = %s' % common_utils.Bitbake.getVar('XILINX_WITH_ESW'))
