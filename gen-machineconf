@@ -219,6 +219,13 @@ def main():
             path = os.path.realpath(path)
             global_args.hw_description = path
 
+        # Special case for passing in system-top.dts, we really need the directory we're in
+        if '://' not in global_args.hw_description and global_args.hw_description.endswith('system-top.dts'):
+            dirname = os.path.dirname(global_args.hw_description)
+            # This looks like an sdtgen output dir, pass the path to the directory instead!
+            if os.path.exists(os.path.join(dirname, 'include')):
+                global_args.hw_description = dirname
+
         try:
             hw_dir, global_args.src_uri, global_args.s_dir, localpath = common_utils.Bitbake.fetchAndUnpackURI(global_args.hw_description)
         except common_utils.FetchError as e:
