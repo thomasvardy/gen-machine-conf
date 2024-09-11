@@ -421,14 +421,19 @@ def GetLopperUtilsPath():
 
     return lopper, lopper_dir, lops_dir, embeddedsw
 
-def startBitbake():
+def startBitbake(disabled=False):
     global Bitbake
     if not Bitbake:
-        Bitbake = bitbake(True)
-        try:
-            Bitbake.initialize()
-        except Exception:
-            logger.warning("Bitbake is not available, some functionality may be reduced.")
+        Bitbake = bitbake(disabled=disabled)
+        if not disabled:
+            try:
+                Bitbake.initialize()
+            except Exception:
+                logger.warning("Bitbake is not available, some functionality may be reduced.")
+                Bitbake.shutdown()
+                Bitbake.disabled = True
+        else:
+            logger.info("Bitbake is not available, some functionality may be reduced.")
 
 class FetchError(Exception):
     """Fetch exception transfered from bitbake"""
@@ -447,19 +452,19 @@ class bitbake():
     recipes_parsed = False
     prepare_args = None
 
-    def __init__(self, config_only=False, prefile=[]):
-        try:
-            import bb.tinfoil
-        except Exception as e:
+    def __init__(self, config_only=False, prefile=[], disabled=False):
+        if disabled:
             self.disabled = True
+        else:
+            try:
+                import bb.tinfoil
+            except Exception as e:
+                self.disabled = True
 
         self.prepare_args = { 'config_only':config_only , 'prefile':prefile }
 
     def __del__(self):
-        try:
-            self.shutdown()
-        except:
-            pass
+        self.shutdown()
 
     # Typlical flow:
     #  initilize
@@ -488,7 +493,11 @@ class bitbake():
         logger.debug('Shutting down bitbake')
 
         if self.tinfoil:
-            self.tinfoil.shutdown()
+            # No recovery if we can't shutdown, just accept any exceptions
+            try:
+                self.tinfoil.shutdown()
+            except:
+                pass
             time.sleep(3)
 
         self.tinfoil = None
@@ -541,7 +550,13 @@ class bitbake():
             # run_actions requires config_only set to False
             self.prepare_args['config_only'] = False
             self.tinfoilConfig = bb.tinfoil.TinfoilConfigParameters(config_only=self.prepare_args['config_only'], quiet=2, prefile=self.prepare_args['prefile'])
-            self.tinfoil.run_actions(config_params=self.tinfoilConfig)
+            try:
+                self.tinfoil.run_actions(config_params=self.tinfoilConfig)
+            except bb.tinfoil.TinfoilUIException as e:
+                # Something went very wrong, shutdown bitbake and disable it
+                self.shutdown()
+                self.disabled = True
+                raise Exception("Bitbake failed tinfoil.run_actions: %s" % e)
             self.tinfoil.recipes_parsed = True
             self.recipes_parsed = True
 
@@ -553,14 +568,18 @@ class bitbake():
       logger.debug('Getting bitbake variable %s from %s' % (variable, recipe))
 
       d = None
-      if recipe:
-          if not self.recipes_parsed:
-              self.parse_recipes()
-          d = self.tinfoil.parse_recipe(recipe)
-      else:
-          if not self.tinfoilPrepared:
-              self.prepare()
-          d = self.tinfoil.config_data
+      try:
+          if recipe:
+              if not self.recipes_parsed:
+                  self.parse_recipes()
+              d = self.tinfoil.parse_recipe(recipe)
+          else:
+              if not self.tinfoilPrepared:
+                  self.prepare()
+              d = self.tinfoil.config_data
+      except:
+          # Something went wrong in bitbake, we accept that and return 'nothing'
+          return None
 
       return d.getVar(variable)
 

@@ -141,37 +141,43 @@ def main():
     subparsers = parser.add_subparsers(title='subcommands', metavar='<subcommand>',
                                        dest='subcommand')
 
+    # Try to start bitbake
+    common_utils.startBitbake()
+    if not common_utils.Bitbake.disabled:
+        try:
+            # prepare can fail if there is an invalid configuration
+            common_utils.Bitbake.prepare(True)
+        except:
+            logger.warning('Bitbake exception, bitbake is not available, some functionality may be reduced.')
+            common_utils.Bitbake.shutdown()
+            common_utils.Bitbake.disabled = True
+
     # Try to get BBPATH to load modules
     # We can skip this by setting SKIP_BBPATH_SEARCH variable from env
     bbpath = ''
-    if os.environ.get('SKIP_BBPATH_SEARCH'):
+    if common_utils.Bitbake.disabled:
+        logger.debug('Bitbake is disbled, skip getting BBPATH')
+    elif os.environ.get('SKIP_BBPATH_SEARCH'):
         logger.debug('SKIP_BBPATH_SEARCH is set, Skip getting '
                         'BBPATH to load gen-machineconf modules')
     else:
-        bbpath = ''
-        try:
-            common_utils.startBitbake()
-            bbpath = common_utils.Bitbake.getVar('BBPATH') or ''
-        except Exception as e:
-            logger.warning('Bitbake is unavailable due to an error.  Continuing without bitbake.')
-            # It's clearly broken!
-            common_utils.Bitbake.shutdown()
-            common_utils.Bitbake.disabled = True
+        bbpath = common_utils.Bitbake.getVar('BBPATH') or ''
+
+        # We can only check for duplicate machines when bbpath checking is available
+        if global_args.machine:
+            logger.debug('checking for machine %s' % global_args.machine)
+
+            for path in bbpath.split(':'):
+                check_path = os.path.join(path, 'conf/machine', global_args.machine + '.conf')
+                logger.debug('  checking %s' % check_path)
+                if os.path.exists(check_path) and check_path != os.path.join(global_args.config_dir, 'machine', global_args.machine + '.conf'):
+                    logger.warning('A machine %s was found in %s, this may conflict with the machine you specified.  It is recommended to use a different name for your machine.' % (global_args.machine, check_path))
+                    break
 
     # Load the plugins from BBPATH and lib/gen-machineconf directory
     for path in bbpath.split(':') + [scripts_path]:
         pluginpath = os.path.join(path, 'lib', 'gen-machineconf')
         common_utils.load_plugins(plugins, pluginpath)
-
-    if global_args.machine:
-        logger.debug('checking for machine %s' % global_args.machine)
-
-        for path in bbpath.split(':'):
-            check_path = os.path.join(path, 'conf/machine', global_args.machine + '.conf')
-            logger.debug('  checking %s' % check_path)
-            if os.path.exists(check_path) and check_path != os.path.join(global_args.config_dir, 'machine', global_args.machine + '.conf'):
-                logger.warning('A machine %s was found in %s, this may conflict with the machine you specified.  It is recommended to use a different name for your machine.' % (global_args.machine, check_path))
-                break
 
     # Register commands from plugins
     for plugin in plugins:
@@ -204,8 +210,6 @@ def main():
 
     if not parserhelp:
         # Make sure bitbake has started, if it's available:
-        common_utils.startBitbake()
-
         localpath = ''
 
         # User passed in a path, make sure it's turned into an absolute,
