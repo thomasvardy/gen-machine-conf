@@ -141,16 +141,20 @@ def main():
     subparsers = parser.add_subparsers(title='subcommands', metavar='<subcommand>',
                                        dest='subcommand')
 
-    # Try to start bitbake
-    common_utils.startBitbake()
-    if not common_utils.Bitbake.disabled:
-        try:
-            # prepare can fail if there is an invalid configuration
-            common_utils.Bitbake.prepare(True)
-        except:
-            logger.warning('Bitbake exception, bitbake is not available, some functionality may be reduced.')
-            common_utils.Bitbake.shutdown()
-            common_utils.Bitbake.disabled = True
+    # PetaLinux configuration tool skips bitbake usage
+    if 'PETALINUX' in os.environ.keys() or global_args.petalinux:
+        common_utils.startBitbake(disabled=True)
+    else:
+        # Try to start bitbake
+        common_utils.startBitbake()
+        if not common_utils.Bitbake.disabled:
+            try:
+                # prepare can fail if there is an invalid configuration
+                common_utils.Bitbake.prepare(True)
+            except:
+                logger.warning('Bitbake exception, bitbake is not available, some functionality may be reduced.')
+                common_utils.Bitbake.shutdown()
+                common_utils.Bitbake.disabled = True
 
     # Try to get BBPATH to load modules
     # We can skip this by setting SKIP_BBPATH_SEARCH variable from env
