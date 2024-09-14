@@ -8078,15 +8078,6 @@ config mtools-dbg
 	
 endmenu
 endmenu
-if system-zynqmp
-menu "power management "
-config hellopm
-        bool "hellopm"
-        help
-        A power management Linux application which will allow user to do various
-        operations such as suspend,wakeup,reboot,shutdown the system
-endmenu
-endif
 menu "utils "
 menu "dosfstools "
 config dosfstools
