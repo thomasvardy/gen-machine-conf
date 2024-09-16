@@ -157,74 +157,90 @@ options:
 
 ```bash
 # Custom xsa method
-$ gen-machineconf --soc-family microblaze --hw-description /<PATH_TO_CUSTOM_XSA>/kc705-microblazeel/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family microblaze --hw-description /<PATH_TO_CUSTOM_XSA>/kc705-microblazeel/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 
 # BSP method:
-$ gen-machineconf --soc-family microblaze --hw-description /<PATH_TO_HDF_ARTIFACTORY>/kc705-microblazeel/system.xsa --machine-name kc705-microblazeel --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family microblaze --hw-description /<PATH_TO_HDF_ARTIFACTORY>/kc705-microblazeel/system.xsa --machine-name kc705-microblazeel --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
 * Zynq-7000 XSCT Method:
 
 ```bash
 # Custom xsa method
-$ gen-machineconf --soc-family zynq --hw-description /<PATH_TO_CUSTOM_XSA>/zc702-zynq7/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family zynq --hw-description /<PATH_TO_CUSTOM_XSA>/zc702-zynq7/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 
 # BSP method:
-$ gen-machineconf --soc-family zynq --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zc702-zynq7/system.xsa --machine-name zc702-zynq7 --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf  parse-xsa --soc-family zynq --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zc702-zynq7/system.xsa --machine-name zc702-zynq7 --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
 * Zynq-7000 SDT Method:
 
 ```bash
 # Without pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt
 
 # With full bitstream pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt -g full
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt -g full
 ```
 
 * ZynqMP XSCT Method:
 
 ```bash
 # Custom xsa method
-$ gen-machineconf --soc-family zynqmp --hw-description /<PATH_TO_CUSTOM_XSA>/zcu106-zynqmp/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_CUSTOM_XSA>/zcu106-zynqmp/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 
 # BSP method:
-$ gen-machineconf --soc-family zynqmp --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zcu106-zynqmp/system.xsa --machine-name zcu106-zynqmp --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zcu106-zynqmp/system.xsa --machine-name zcu106-zynqmp --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
 * ZynqMP SDT Method:
 
 ```bash
 # Without pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
 
 # With full bitstream pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
 
 # With dfx static pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
 ```
 
 * Versal XSCT Method:
 
 ```bash
 # Custom xsa method
-$ gen-machineconf --soc-family versal --hw-description /<PATH_TO_CUSTOM_XSA>/vck190-versal/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family versal --hw-description /<PATH_TO_CUSTOM_XSA>/vck190-versal/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 
 # BSP method:
-$ gen-machineconf --soc-family versal --hw-description /<PATH_TO_HDF_ARTIFACTORY>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machineconf parse-xsa --soc-family versal --hw-description /<PATH_TO_HDF_ARTIFACTORY>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
 ```
 
 * Versal SDT Method:
 
 ```bash
 # Without PL Overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
 
 # With segmented configuration pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
 
 # With dfx static pl overlay
-$ gen-machineconf --parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+$ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+```
+
+* Using gen-machineconf without subcommand:
+
+The Gen-machineconf utility can be able to auto-detect the subcommand based on the file/URI specified with --hw-description.
+If xsa is specified, it uses the subcommand 'parse-xsa', and if system-top.dts is specified, it uses the subcommand 'parse-sdt'.
+If directory is specified and it contains both xsa and system-top.dts, priority will be given to system-top.dts, and subcommand
+will be 'parse-sdt'.
+
+```bash
+# xsa method
+$ gen-machineconf --soc-family <soc_family> --hw-description <PATH_TO_CUSTOM_XSA> --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+
+# SDT method
+$ gen-machineconf --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
+
 ```
