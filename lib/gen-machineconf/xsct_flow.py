@@ -329,10 +329,10 @@ def ParseXsa(args):
     args.soc_family = hw_info['soc_family']
     args.soc_variant = hw_info['soc_variant']
 
-    project_config.PrintSystemConfiguration(args, None, hw_info['device_id'], None)
-
     #### Generate Kconfig:
     project_config.GenKconfigProj(args, system_conffile, hw_info)
+
+    project_config.PrintSystemConfiguration(args, None, hw_info['device_id'], None)
 
     # Update the sysconfig with command line arguments
     # to reflect in menuconfig/config

@@ -802,10 +802,17 @@ def ParseSDT(args):
     args.soc_family = hw_info['soc_family']
     args.soc_variant = hw_info['soc_variant']
 
-    project_config.PrintSystemConfiguration(args, hw_info['model'], hw_info['device_id'], hw_info['cpu_info_dict'])
-
     #### Generate Kconfig:
     project_config.GenKconfigProj(args, system_conffile, hw_info)
+
+    # In case config file exists before prepocess use that
+    cfg_machine = common_utils.GetConfigValue('CONFIG_YOCTO_MACHINE_NAME',
+                                                    system_conffile)
+    if cfg_machine:
+        args.machine = cfg_machine
+
+    project_config.PrintSystemConfiguration(args, hw_info['model'],
+                            hw_info['device_id'], hw_info['cpu_info_dict'])
 
     # Update the sysconfig with command line arguments
     # to reflect in menuconfig/config
