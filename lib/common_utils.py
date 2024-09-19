@@ -648,8 +648,13 @@ class bitbake():
             s_dir = fetcher.ud[url].parm.get('S') or ''
             localpath = fetcher.ud[url].localpath
             if url.startswith("file:///"):
+                # If the file can't be unpacked or refers to a directory
+                # then it will be in the same directory stucture as the
+                # original file:// URL.  hw_dir = ${WORKDIR}
                 base_sdir = os.path.dirname(uri[8:])
-                s_dir = os.path.join(base_sdir, s_dir)
+                maybe_s_dir = os.path.join(base_sdir, s_dir)
+                if os.path.exists(os.path.join(hw_dir, maybe_s_dir)):
+                    s_dir = maybe_s_dir
             elif url.startswith("git://"):
                 s_dir = os.path.join('git', s_dir)
 
