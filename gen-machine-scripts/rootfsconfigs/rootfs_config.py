@@ -52,7 +52,7 @@ def read_packages(xilinx_arch):
             packages['package_feed_archs'] = re.sub(
                 r'"|\]|\\', r'', package_feed_archs).rstrip("'")
         else:
-            if re.search("=y'\]", line_str):
+            if re.search(r"=y'\]", line_str):
                 line_str = line_str.split('_')[1]
                 line_str = line_str.split('=')[0]
                 line_str = fix_config_name(line_str)
@@ -130,7 +130,7 @@ def add_user_params(packages, bb_file):
                 if param[1]:
                     result = subprocess.check_output(
                         ["openssl", "passwd", "-6", "-salt", "xx", param[1]]).strip()
-                    param[1] = str(result, "utf-8").replace('$', '\$')
+                    param[1] = str(result, "utf-8").replace('$', r'\$')
                     param[1] = " -p '" + param[1] + "'"
                 else:
                     param[1] = " -p ''"
@@ -387,7 +387,7 @@ def extract_value(Layers, value):
                             line = re.sub('"|\n', '', line)
                             line = line.split('=')[1]
                             strg = re.sub(
-                                '\.bb$|\.inc$|\.bbclass$', '', filename)
+                                r'\.bb$|\.inc$|\.bbclass$', '', filename)
                             strg = strg.split('_')[0]
                             value_dict[strg] = line.strip()
                     files_bb.close()
