@@ -114,7 +114,7 @@ def GenerateMirrors(args, arch):
                 default_downloads_url)
     else:
         if not xilinx_network:
-            mirrrs_string += 'SOURCE_MIRROR_URL = "%s"\n' % pre_mirror_url
+            mirrors_string += 'SOURCE_MIRROR_URL = "%s"\n' % pre_mirror_url
         else:
             mirrors_string += '# Add Pre-mirrors from config\n'
             mirrors_string += 'PREMIRRORS = "%s"\n' % ExpandMirrors(
