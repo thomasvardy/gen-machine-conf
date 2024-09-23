@@ -8565,28 +8565,6 @@ config packagegroup-networking-stack-dev
 endmenu
 
 
-menu "packagegroup-openamp "
-config packagegroup-openamp
-         bool "packagegroup-openamp"
-         help
-	 Includes OpenAMP supported packages
-		libmetal 
-		open-amp 
-		rpmsg-echo-test 
-		rpmsg-mat-mul 
-		rpmsg-proxy-app 
-	 	libmetal-demos 
-		open-amp-demos
-
-config packagegroup-openamp-dbg
-         bool "packagegroup-openamp-dbg"
-         help
-
-config packagegroup-openamp-dev
-         bool "packagegroup-openamp-dev"
-         help
-
-endmenu
 menu "packagegroup-opencv "
 config packagegroup-opencv
          bool "packagegroup-opencv"
