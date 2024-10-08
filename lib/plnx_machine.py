@@ -455,9 +455,9 @@ def GeneratePlnxConfig(args, machine_conf_file):
     if arch == 'aarch64':
         override_string += '\n# PetaLinux tool Arm-trusted-firmware variables\n'
         override_string += AddRemoteSources(
-            'arm-trusted-firmware', 'TRUSTED__FIRMWARE__ARM')
+            'trusted-firmware-a', 'TRUSTED__FIRMWARE__ARM')
         override_string += AddExternalSources(
-            'arm-trusted-firmware', 'TRUSTED__FIRMWARE__ARM')
+            'trusted-firmware-a', 'TRUSTED__FIRMWARE__ARM')
         atf_debug = common_utils.GetConfigValue(
             'CONFIG_SUBSYSTEM_TF-A_DEBUG', system_conffile)
         if atf_debug:
