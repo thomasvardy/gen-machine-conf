@@ -89,12 +89,12 @@ def GenerateMirrors(args, arch):
     mirrors_string = ''
     pre_mirror_url = common_utils.GetConfigValue(
         'CONFIG_PRE_MIRROR_URL', system_conffile)
-    if 'PETALINUX_MAJOR_VER' in os.environ.keys():
-        plnx_major_ver = os.environ['PETALINUX_MAJOR_VER']
+    if 'PETALINUX_VER' in os.environ.keys():
+        plnx_ver = os.environ['PETALINUX_VER']
     else:
-        plnx_major_ver = '2024'
+        plnx_ver = '2024.2'
     default_downloads_url = 'https://petalinux.xilinx.com/sswreleases/rel-v%s/downloads' % (
-        plnx_major_ver)
+        plnx_ver)
     # Add Download mirrors
     if pre_mirror_url != default_downloads_url:
         # if user configured different premirrors than default
