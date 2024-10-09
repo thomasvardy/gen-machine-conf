@@ -603,14 +603,6 @@ def GeneratePlnxConfig(args, machine_conf_file):
         % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_PRE_BOOTENV',
                                       system_conffile)
 
-    rootfs_jffs2 = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ROOTFS_JFFS2',
-                                               system_conffile)
-    if rootfs_jffs2:
-        jffs2_size = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_JFFS2_ERASE_SIZE_',
-                                                 system_conffile, 'choice')
-        jffs2_size = hex(int(jffs2_size) * 1024)
-        override_string += '\n#jffs2 variables\n'
-        override_string += 'JFFS2_ERASEBLOCK = "%s"\n' % jffs2_size
 
     rootfs_ubifs = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ROOTFS_UBIFS',
                                                system_conffile)

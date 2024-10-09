@@ -227,22 +227,6 @@ def PostProcessSysConf(args, system_conffile, ipinfo_file, plnx_syshw_file):
         bootargs += ' rw'
         # Make sure the NFSROOT_DIR is in /etc/exports
         # TODO Check /etc/exports file for nfs directory if not give warning
-    elif rootfs_type == 'JFFS2':
-        jffs2_partname = common_utils.GetConfigValue(
-            'CONFIG_SUBSYSTEM_IMAGES_ADVANCED_AUTOCONFIG_JFFS2_PART_NAME', system_conffile)
-        if not jffs2_partname:
-            jffs2_partname = 'jffs2'
-            if bootargs_auto:
-                logger.info(
-                    'Jffs2 rootfs partition name is set to the default one "jffs2" since you haven\'t specify one')
-        found_part = common_utils.GetConfigValue(
-            'CONFIG_SUBSYSTEM_FLASH_', system_conffile, 'choice', '_NAME="%s"' % jffs2_partname)
-        if not found_part:
-            logger.warning(
-                'Jffs2 is selected as root FS but the jffs2 partition: "%s" is not defined in the system config menu.' % jffs2_partname)
-            logger.warning(
-                'Please make sure you have "%s" defined in your flash partitions table.' % jffs2_partname)
-        bootargs = 'root=mtd:%s rw rootfstype=jffs2' % jffs2_partname
     elif rootfs_type == 'UBIFS':
         ubi_partname = common_utils.GetConfigValue(
             'CONFIG_SUBSYSTEM_UBI_PART_NAME', system_conffile)

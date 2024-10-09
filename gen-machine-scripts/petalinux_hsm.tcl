@@ -108,7 +108,7 @@ proc get_partitions {sysconfig flash_kname} {
 
 	# get part name
 	set ret_part_offsets {}
-	foreach p {fpga boot kernel jffs2 dtb} {
+	foreach p {fpga boot kernel dtb} {
 		set upperp [string toupper "${p}"]
 		set idx [lsearch -regexp ${lines} "^CONFIG_SUBSYSTEM_IMAGES_ADVANCED_AUTOCONFIG_${flash_kname}_PART_NAME="]
 		set partname "${p}"

@@ -226,7 +226,6 @@ proc read_config {} {
 					"kernel" {
 						set image_file [dict get $kconfig_dict "subsys_conf" "uimage_name"]
 					}
-					"jffs2" {set image_file "rootfs.jffs2"}
 					"dtb" {set image_file "system.dtb"}
 					"fpga" {set image_file "system.bit.bin"}
 					default { }

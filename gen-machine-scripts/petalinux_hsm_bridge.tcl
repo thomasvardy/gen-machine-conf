@@ -297,7 +297,7 @@ variable func_called_list ""
 variable conf_prefix "#define "
 
 # list of partition that we care about
-variable sys_part_list "boot bootenv jffs2 kernel dtb fpga"
+variable sys_part_list "boot bootenv kernel dtb fpga"
 
 
 variable function
