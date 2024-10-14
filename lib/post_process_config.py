@@ -117,7 +117,7 @@ def UpdateMemConfigs(args, system_conffile):
             logger.error('Both boot script flash offset [%s] and boot script flash size [%s] should provide' % (
                 bootscr_flash_offset, bootscr_flash_size))
 
-def GetSysConsoleBootargs(system_conffile, soc_family, soc_variant):
+def GetSysConsoleBootargs(args, system_conffile, soc_family, soc_variant):
     global ipinfo_data
     serialname = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_SERIAL_', system_conffile, 'choice', '_SELECT=y')
@@ -138,6 +138,8 @@ def GetSysConsoleBootargs(system_conffile, soc_family, soc_variant):
                      (serialipname, serialname))
     no_alias = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_ENABLE_NO_ALIAS', system_conffile)
+    if args.hw_flow == 'sdt' and soc_family != 'zynq':
+        no_alias = 'y'
     serial_no = ''
     if no_alias == 'y':
         if "_" in serialname:
@@ -279,7 +281,7 @@ def PostProcessSysConf(args, system_conffile, ipinfo_file, plnx_syshw_file):
         UpdateMemConfigs(args, system_conffile)
     if bootargs_auto == 'y':
         consolebootargs = GetSysConsoleBootargs(
-            system_conffile, args.soc_family, args.soc_variant)
+            args, system_conffile, args.soc_family, args.soc_variant)
         ramdisk_image = common_utils.GetConfigValue(
             'CONFIG_SUBSYSTEM_INITRAMFS_IMAGE_NAME', system_conffile)
         if ramdisk_image and re.search('initramfs', ramdisk_image):
