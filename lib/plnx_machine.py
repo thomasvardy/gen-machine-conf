@@ -29,7 +29,7 @@ def AddRemoteSources(component, Kcomponent):
     conf_prop = {
         'linux-xlnx': ['KERNELURI', 'SRCREV', 'KBRANCH', 'LIC_FILES_CHKSUM'],
         'u-boot-xlnx': ['UBOOTURI', 'SRCREV', 'UBRANCH', 'LIC_FILES_CHKSUM'],
-        'arm-trusted-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
+        'trusted-firmware-a': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
         'plm-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
         'psm-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
     }
