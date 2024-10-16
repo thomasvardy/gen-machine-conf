@@ -340,6 +340,12 @@ proc gen_part_table {fid tab} {
 			puts $fid "${tab}\t\tlabel = \"${part_name}\";"
 			puts $fid "${tab}\t\treg = <${part_offset} ${part_size}>;"
 
+			if {[dict exists $kconfig_dict flash "part$part_no" "flags"]} {
+				set part_flag [dict get $kconfig_dict flash "part$part_no" "flags"]
+				if { "${part_flag}" == "ro" } {
+					puts $fid "${tab}\t\tread-only;"
+				}
+			}
 			puts $fid "${tab}\t\};"
 		} else {
 			break
