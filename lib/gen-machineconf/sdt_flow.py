@@ -57,7 +57,7 @@ def RunLopperGenDomainYaml(hw_file, iss_file, dts_path, domain_yaml, outdir):
     lopper, lopper_dir, lops_dir, embeddedsw = common_utils.GetLopperUtilsPath()
     cmd = 'LOPPER_DTC_FLAGS="-b 0 -@" %s -O %s -f --enhanced %s -- isospec -v -v --audit %s %s' % (
                              lopper, outdir, hw_file, iss_file, domain_yaml)
-    stdout = common_utils.RunCmd(cmd, dts_path, shell=True)
+    stdout = common_utils.RunCmd(cmd, outdir, shell=True)
     return stdout
 
 def RunLopperGenDomainDTS(outdir, dts_path, hw_file, dts_file, domain_name, domain_yaml):
