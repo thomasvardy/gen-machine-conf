@@ -67,27 +67,25 @@ def GetTuneFeatures(soc_family, system_conffile):
     return ' '.join(tune_features)
 
 
-Machinefeaturesdict = {
-    'vdu': 'vdu',
-    'vcu': 'vcu',
-    'ai_engine': 'aie',
-    'psu_gpu': 'mali400'
+Machinefeatures_soc = {
+    'zynqmp': {
+        'dr': 'rfsoc', 'ev': 'mali400 vcu', 'eg': 'mali400'
+    },
+    'versal': {
+        'ai-core': 'vdu', 'ai-edge': 'vdu'
+    }
 }
-
 
 def GetMachineFeatures(args, system_conffile):
     machine_features = ''
+
+    if args.soc_family in Machinefeatures_soc.keys():
+        machine_features = Machinefeatures_soc[args.soc_family].get(args.soc_variant, '')
+
     is_fpga_manager = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
     if is_fpga_manager == 'y':
         machine_features += ' fpga-overlay'
-
-    if args.soc_variant == 'dr':
-        machine_features += ' rfsoc'
-
-    for ip_name in Machinefeaturesdict.keys():
-        if CheckIP(ip_name, system_conffile):
-            machine_features += ' %s' % Machinefeaturesdict[ip_name]
 
     return machine_features
 
