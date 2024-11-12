@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 #
 
-menu "DTG Settings"
+menu "DT Settings"
 config SUBSYSTEM_MACHINE_NAME
         string "MACHINE_NAME"
         default "template"
+	depends on !SUBSYSTEM_SDT_FLOW
         help
 	 Keep empty or specify auto/AUTO it will point to DTG machine name based on the
 	 yocto machine name specified in config.
@@ -23,6 +24,7 @@ config SUBSYSTEM_DT_XSCT_WORKSPACE
 config SUBSYSTEM_DTB_PADDING_SIZE
 	hex "DTB padding size"
 	default 0x1000
+	depends on !SUBSYSTEM_SDT_FLOW
 	help
 	  Set this value for DTB padding size
 

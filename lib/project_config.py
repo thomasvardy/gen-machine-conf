@@ -21,17 +21,17 @@ logger = logging.getLogger('Gen-Machineconf')
 
 
 start_menu = '''
-mainmenu "PetaLinux System Configuration"
+mainmenu "{0}System Configuration"
 config SUBSYSTEM_TYPE_LINUX
         bool
         default y
-        select SYSTEM_{0}
+        select SYSTEM_{1}
 
-config SYSTEM_{0}
-        bool "{0} Configuration"
+config SYSTEM_{1}
+        bool "{1} Configuration"
         help
-          {0} Configuration for petalinux project.
-          All these config options will be in {1}/config
+          {1} Configuration for the project.
+          All these config options will be in {2}/config
 '''
 
 socvariant_menu = '''
@@ -165,7 +165,8 @@ def GenKconfigProj(args, system_conffile, hw_info, MCObject=None):
                     '@@multiconfigmenustr@@', Kconfig_BBMCTargets)
 
     Kconfig_soc_family = args.soc_family.upper()
-    Kconfig_str = start_menu.format(Kconfig_soc_family, args.output)
+    Kconfig_str = start_menu.format('PetaLinux ' if args.petalinux else '',
+                                    Kconfig_soc_family, args.output)
     if args.soc_variant:
         Kconfig_soc_variant = args.soc_variant.upper()
         Kconfig_str += socvariant_menu.format(

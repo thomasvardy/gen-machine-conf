@@ -8,7 +8,7 @@ choice
 	prompt "Subsystem Architecture (NO EDIT!)"
 	default SUBSYSTEM_ARCH_ARM
 	help
-	  This option is to control the processor targeted by PetaLinux.
+	  This option is to control the processor targeted by System Configuration.
 	  WARNING: Do not edit this option.
 
 config SUBSYSTEM_ARCH_AARCH64

@@ -70,7 +70,7 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\tThe configuration in this menu impacts the\n'
     confstr += '\tmemory settings in the device tree autoconfig files.\n'
     confstr += '\tIf you select "manual",\n'
-    confstr += '\tPetaLinux will auto generate memory node based on user inputs,\n'
+    confstr += '\tAuto generate the memory node based on user inputs,\n'
     confstr += '\tyou will need to specify base address and memory size.\n'
     confstr += '\tTo skip generating lower or upper memory node specify 0x0 offset to the memory size.\n'
     KconfPrefix = 'SUBSYSTEM_MEMORY'
@@ -207,11 +207,12 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             'U-boot and Linux' if comp == 'DTG' else comp)
         confstr += '\tIf you select \'manual\', you will need to add this variable\n'
         if comp == 'TF-A':
-            confstr += '\tATF_CONSOLE:forcevariable = "<serial_ipname>" in petalinuxbps.conf\n'
+            confstr += '\tATF_CONSOLE:forcevariable = "<serial_ipname>" in petalinuxbps.conf or local.conf\n'
         else:
-            confstr += '\tYAML_SERIAL_CONSOLE_STDIN:forcevariable:pn-<recipename> = "<serial_ipname>"\n'
-            confstr += '\tYAML_SERIAL_CONSOLE_STDOUT:forcevariable:pn-<recipename> = \"<serial_ipname>\"\n'
-            confstr += '\tin petalinuxbsp.conf file to specify the stdin/stdout."\n'
+            confstr += '\tFor XSCT flow:\n'
+            confstr += '\t YAML_SERIAL_CONSOLE_STDIN:forcevariable:pn-<recipename> = "<serial_ipname>"\n'
+            confstr += '\t YAML_SERIAL_CONSOLE_STDOUT:forcevariable:pn-<recipename> = \"<serial_ipname>\"\n'
+            confstr += '\t in petalinuxbsp.conf file or local.conf to specify the stdin/stdout."\n'
         if comp == 'DTG':
             serialconfstr += '\nconfig %s_IP_NAME\n' % (
                 serial_Kconf)
@@ -381,9 +382,9 @@ def GenConf_flash(IpsToAdd, slavesdict, proc_ipname, arch):
     confstr += '\tprompt "Primary Flash"\n'
     confstr += '\thelp\n'
     confstr += '\tSelect a Flash instance used as Primary Flash.\n'
-    confstr += '\tPetaLinux auto config will apply the flash partition table settings\n'
+    confstr += '\tAuto config will apply the flash partition table settings\n'
     confstr += '\tto the primary flash.\n'
-    confstr += '\tIf you preferred flash is not on the list or you don\'t want PetaLinux\n'
+    confstr += '\tIf you preferred flash is not on the list or you don\'t want\n'
     confstr += '\tto manage your flash partition, please select manual.\n'
     flashconfstr = ''
     flaship = ''
