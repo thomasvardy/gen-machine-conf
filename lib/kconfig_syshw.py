@@ -194,7 +194,8 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
                   'ps7_cortexa9': ['FSBL', 'DTG'],
                   'psu_cortexa53': ['PMUFW', 'FSBL', 'TF-A', 'DTG'],
                   'psv_cortexa72': ['PLM', 'TF-A', 'DTG'],
-                  'psx_cortexa78': ['PLM', 'TF-A', 'DTG']
+                  'psx_cortexa78': ['PLM', 'TF-A', 'DTG'],
+                  'cortexa78': ['PLM', 'ASU', 'TF-A', 'DTG']
                   }
     def_baudrates = ['600', '9600', '28800',
                      '115200', '230400', '460800', '921600']

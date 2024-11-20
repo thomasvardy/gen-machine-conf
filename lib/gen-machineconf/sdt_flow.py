@@ -526,6 +526,13 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_psm=1"\n'
         self.GenLibxilFeatures('', extra_conf_str)
 
+    def AsuMicroblaze(self):
+        logger.info('Generating microblaze baremetal configuration for Versal2 ASU')
+        self.MBTuneFeatures()
+        # TARGET_CFLAGS need to be update
+        extra_conf_str = ''
+        self.GenLibxilFeatures('', extra_conf_str)
+
     def ArmCortexA9Setup(self):
         if self.os_hint.startswith('linux'):
             if not self.GenLinuxDts:
@@ -647,6 +654,8 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                     self.PmcMicroblaze()
                 elif self.cpu == 'psm-microblaze':
                     self.PsmMicroblaze()
+                elif self.cpu == 'asu-microblaze-riscv':
+                    self.AsuMicroblaze()
                 else:
                     logger.warning('Unknown CPU %s' % self.cpu)
 

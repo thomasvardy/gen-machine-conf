@@ -195,6 +195,11 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
             MultiConfDict['PsmTune'],
             os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
 
+    if 'AsuTune' in MultiConfDict:
+        machine_override_string += 'TUNEFILE[%s] = "%s"\n' % (
+            MultiConfDict['AsuTune'],
+            os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
+
     # Linux baremeal file pointers and dependencies
     if 'FsblMcDepends' in MultiConfDict:
         machine_override_string += '\n# First Stage Boot Loader\n'
@@ -235,6 +240,14 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
             'PsmMcDepends')
         machine_override_string += 'PSM_FIRMWARE_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
             'PsmFWDeployDir').rstrip('/')
+
+    if 'AsuMcDepends' in MultiConfDict:
+        machine_override_string += '\n# ASU Firware\n'
+        machine_override_string += 'ASU_DEPENDS = ""\n'
+        machine_override_string += 'ASU_MCDEPENDS = "%s"\n' % MultiConfDict.get(
+            'AsuMcDepends')
+        machine_override_string += 'ASU_FIRMWARE_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
+            'AsuFWDeployDir').rstrip('/')
 
     return machine_override_string
 

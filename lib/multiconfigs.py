@@ -80,6 +80,11 @@ class ParseMultiConfigFiles():
                 self.MultiConfFiles.append(mc_name)
                 self.MultiConfMin.append(mc_name)
                 self.MultiConfMap[mc_name] = { 'cpuname' : self.cpuname, 'cpu' : self.cpu, 'core' : self.core, 'domain' : self.domain, 'os_hint' : self.os_hint };
+            elif self.cpu == 'asu-microblaze-riscv':
+                mc_name = 'microblaze-asu-riscv'
+                self.MultiConfFiles.append(mc_name)
+                self.MultiConfMin.append(mc_name)
+                self.MultiConfMap[mc_name] = { 'cpuname' : self.cpuname, 'cpu' : self.cpu, 'core' : self.core, 'domain' : self.domain, 'os_hint' : self.os_hint };
             else:
                 logger.warning('Unknown CPU %s' % self.cpu)
         # Return list of conf files if files_only True
@@ -102,7 +107,8 @@ class GenerateMultiConfigFiles():
                      'arm,cortex-r52' : 'cortexr52',
                      'pmu-microblaze' : 'microblaze-pmu',
                      'pmc-microblaze' : 'microblaze-pmc',
-                     'psm-microblaze' : 'microblaze-psm' }
+                     'psm-microblaze' : 'microblaze-psm',
+                     'asu-microblaze-riscv' : 'microblaze-asu-riscv' }
 
         if not self.MultiConfUser or not self.MultiConfMap:
             logger.debug("No multilibs enabled.")
@@ -140,6 +146,11 @@ class GenerateMultiConfigFiles():
                         self.MultiConfDict['PsmTune'] = defaulttune
                         self.MultiConfDict['PsmMcDepends'] = 'mc::%s:psm-firmware:do_deploy' % mc_filename
                         self.MultiConfDict['PsmFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
+                        distro = 'xilinx-standalone-nolto'
+                    elif cpu == 'asu-microblaze-riscv':
+                        self.MultiConfDict['AsuTune'] = defaulttune
+                        self.MultiConfDict['AsuMcDepends'] = 'mc::%s:asu-firmware:do_deploy' % mc_filename
+                        self.MultiConfDict['AsuFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
                         distro = 'xilinx-standalone-nolto'
 
                     if distro == 'fsbl':
