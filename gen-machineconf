@@ -96,7 +96,7 @@ def main():
                                )
     optional_args.add_argument('--soc-family', metavar='',
                                choices=['microblaze', 'zynq',
-                                        'zynqmp', 'versal'],
+                                        'zynqmp', 'versal', 'versal2'],
                                help='SOC family type from choice list (usually auto detected).')
     optional_args.add_argument('--soc-variant', metavar='',
                                help='SOC Variant: Ex: cg, dr, eg, ev, ai-prime, premium (usually auto detected).')

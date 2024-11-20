@@ -556,7 +556,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
 
 
 YoctoGenericMachines = ('microblaze-generic', 'zynq-generic',
-                        'zynqmp-generic','versal-generic', 'versal-net-generic')
+                        'zynqmp-generic','versal-generic', 'versal-net-generic', 'versal2-generic')
 
 def GenerateYoctoMachine(args, system_conffile, plnx_syshw_file, MultiConfDict=''):
     genmachine_scripts = project_config.GenMachineScriptsPath()

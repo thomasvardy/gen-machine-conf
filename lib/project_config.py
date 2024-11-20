@@ -81,7 +81,11 @@ def DetectSocVariant(device_id):
 
 def DetectSocFamily(proc_type):
     soc_family = ''
-    if re.search('.*a78.*', proc_type) or re.search('.*a72.*', proc_type):
+    if re.search('.*a78.*', proc_type):
+        if proc_type.startswith('psx_'):
+            return 'versal'
+        return 'versal2'
+    elif re.search('.*a72.*', proc_type):
         return 'versal'
     elif re.search('.*a53.*', proc_type):
         return 'zynqmp'
