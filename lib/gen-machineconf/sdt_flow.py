@@ -418,11 +418,19 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         # We need linux dts for with and without pl-overlay else without
         # cortexa53-zynqmp-linux.dts it fails to build.
         lopper_args = '-f --enhanced'
+        domain_files = [self.args.domain_file, 'lop-a53-imux.dts']
+        subcommand_args = 'gen_domain_dts %s linux_dt' % self.cpuname
+        if self.args.openamp:
+            if self.args.domain_file == None:
+                logger.error('OpenAMP is enabled but domain YAML is not provided.')
+
+            subcommand_args = ' openamp --openamp_role=host --openamp_host=a53_0 --openamp_remote=r5_0 -- ' + subcommand_args + ' keep_tcm '
+            domain_files = [ domain_files[0], 'lop-load.dts', 'lop-xlate-yaml.dts', domain_files[1] ]
+
         if self.args.domain_file:
             lopper_args += '-x "*.yaml"'
-        domain_files = [self.args.domain_file, 'lop-a53-imux.dts']
         RunLopperGenLinuxDts(self.args.output, self.args.dts_path, domain_files, ps_dts_file,
-                            dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
+                            dts_file, subcommand_args,
                             '-f')
         if conf_file:
             conf_file_str = 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
@@ -480,11 +488,20 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         # We need linux dts for with and without pl-overlay else without
         # cortexa72-versal-linux.dts it fails to build.
         lopper_args = '-f --enhanced'
+        domain_files = [self.args.domain_file, 'lop-a72-imux.dts']
+        subcommand_args = 'gen_domain_dts %s linux_dt' % self.cpuname
+
+        if self.args.openamp:
+            if self.args.domain_file == None:
+                logger.error('OpenAMP is enabled but domain YAML is not provided.')
+
+            subcommand_args = ' openamp --openamp_role=host --openamp_host=a72_0 --openamp_remote=r5_0 -- ' + subcommand_args + ' keep_tcm '
+            domain_files = [ domain_files[0], 'lop-load.dts', 'lop-xlate-yaml.dts', domain_files[1] ]
+
         if self.args.domain_file:
             lopper_args += '-x "*.yaml"'
-        domain_files = [self.args.domain_file, 'lop-a72-imux.dts']
         RunLopperGenLinuxDts(self.args.output, self.args.dts_path, domain_files, ps_dts_file,
-                            dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
+                            dts_file, subcommand_args,
                             '-f')
         if conf_file:
             conf_file_str = 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
@@ -533,11 +550,20 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         # We need linux dts for with and without pl-overlay else without
         # cortexa78-versal-linux.dts it fails to build.
         lopper_args = '-f --enhanced'
+        domain_files = [self.args.domain_file, 'lop-a78-imux.dts']
+        subcommand_args = 'gen_domain_dts %s linux_dt' % self.cpuname
+        if self.args.openamp:
+            if self.args.domain_file == None:
+                logger.error('OpenAMP is enabled but domain YAML is not provided.')
+
+            subcommand_args = ' openamp --openamp_role=host --openamp_host=a78_0 --openamp_remote=r52_0 -- ' + subcommand_args + ' keep_tcm '
+            domain_files = [ domain_files[0], 'lop-load.dts', 'lop-xlate-yaml.dts', domain_files[1] ]
+
+
         if self.args.domain_file:
             lopper_args += '-x "*.yaml"'
-        domain_files = [self.args.domain_file, 'lop-a78-imux.dts']
         RunLopperGenLinuxDts(self.args.output, self.args.dts_path, domain_files, ps_dts_file,
-                            dts_file, 'gen_domain_dts %s linux_dt' % self.cpuname,
+                            dts_file, subcommand_args,
                             '-f')
         if conf_file:
             conf_file_str = 'CONFIG_DTFILE = "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(dts_file)
@@ -934,5 +960,6 @@ def register_commands(subparsers):
                             help='Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal)')
     parser_sdt.add_argument('--dts-path', metavar='<dts_path>',
                             help='Absolute path or subdirectory of conf/dts to place DTS files in (usually auto detected from DTS)')
-
+    parser_sdt.add_argument('--openamp', action='store_true',
+                            help='Enable OpenAMP Lopper run. If this is enabled then refer to OpenAMP YAML. If none is provided as part of --domain-file/-d argument then this will error out.')
     parser_sdt.set_defaults(func=ParseSDT)
