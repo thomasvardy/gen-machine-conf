@@ -69,7 +69,7 @@ def RunLopperGenDomainDTS(outdir, dts_path, hw_file, dts_file, domain_name, doma
     return stdout
 
 def RunLopperUsingDomainFile(domain_files, outdir, dts_path, hw_file,
-                             dts_file='', lopper_args=''):
+                             dts_file='', lopper_args='', subcommand_args=''):
     lopper, lopper_dir, lops_dir, embeddedsw = common_utils.GetLopperUtilsPath()
     domain_args = ''
     for domain in list(filter(None, domain_files)):
@@ -80,8 +80,34 @@ def RunLopperUsingDomainFile(domain_files, outdir, dts_path, hw_file,
     cmd = 'LOPPER_DTC_FLAGS="-b 0 -@" %s -O %s -f --enhanced %s %s %s %s' % (
         lopper, outdir, lopper_args,
         domain_args, hw_file, dts_file)
+
+    if subcommand_args != '':
+        cmd += ' -- %s' % (subcommand_args)
+
     stdout = common_utils.RunCmd(cmd, dts_path, shell=True)
     return stdout
+
+def RunLopperOpenAMPRPU(outdir, dts_path, hw_file, domain_file,
+                        soc_family, core, machine, mcname):
+    # Below is OpenAMP Lopper run to generate header for OpenAMP RPU firmware
+    openamp_host = { 'versal-net': 'a78_0', 'versal': 'a72_0', 'zynqmp': 'a53_0' }
+    openamp_remote = { 'versal-net': 'r52_', 'versal': 'r5_', 'zynqmp': 'r5_' }
+
+    subcommand_args = ' openamp --openamp_role=remote '
+    subcommand_args += ' --openamp_host=' + openamp_host[soc_family]
+    subcommand_args += ' --openamp_remote=' + openamp_remote[soc_family] + core
+    subcommand_args += ' --openamp_output_filename=openamp_rpu.h'
+    lopper_args = '-f --enhanced --permissive -x "*.yaml"'
+    lopper_args = " --permissive "
+
+    domain_files = [ domain_file, 'lop-load.dts', 'lop-xlate-yaml.dts' ]
+    domain_dts_file = hw_file
+    mc_filename = "%s-%s" % (machine, mcname)
+    dts_file = os.path.join(dts_path, '%s_openamp.dts' % mc_filename)
+
+    RunLopperUsingDomainFile(domain_files, outdir, dts_path,
+                             domain_dts_file, dts_file, lopper_args, subcommand_args)
+
 
 def RunLopperGenLinuxDts(outdir, dts_path, domain_files, hw_file, dts_file, subcommand_args, lopper_args=''):
     lopper, lopper_dir, lops_dir, embeddedsw = common_utils.GetLopperUtilsPath()
@@ -220,6 +246,18 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLibxilFeatures('lop-a78-imux.dts')
 
     def CortexR5Baremetal(self):
+        if self.args.openamp:
+            if self.args.domain_file == None:
+                logger.error('OpenAMP is enabled but domain YAML is not provided.')
+                return
+            if self.args.soc_family not in ['versal', 'zynqmp']:
+                logger.error('OpenAMP is enabled but soc-family argument is not valid for R5 target. Requires either versal or zynqmp.')
+                return
+
+            RunLopperOpenAMPRPU(self.args.output, self.args.dts_path, self.args.hw_file,
+                                self.args.domain_file, self.args.soc_family, self.core,
+                                self.args.machine, self.mcname)
+
         extra_conf_str = ''
         if self.os_hint == 'fsbl':
             logger.info('Generating cortex-r5 baremetal configuration for FSBL')
@@ -237,6 +275,17 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
     def CortexR52Baremetal(self):
         logger.info(
                 'Generating cortex-r52 baremetal configuration for core %s [ %s ]' % (self.core, self.domain))
+        if self.args.openamp:
+            if self.args.domain_file == None:
+                logger.error('OpenAMP is enabled but domain YAML is not provided.')
+                return
+            if self.args.soc_family not in ['versal-net']:
+                logger.error('OpenAMP is enabled but soc-family argument is not valid for R5 target. Requires either versal or zynqmp.')
+                return
+
+            RunLopperOpenAMPRPU(self.args.output, self.args.dts_path, self.args.hw_file,
+                                self.args.domain_file, self.args.soc_family, self.core,
+                                self.args.machine, self.mcname)
 
         self.GenLibxilFeatures('lop-r52-imux.dts')
 
