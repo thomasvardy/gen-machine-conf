@@ -73,6 +73,9 @@ Machinefeatures_soc = {
     },
     'versal': {
         'ai-core': 'vdu', 'ai-edge': 'vdu'
+    },
+    'versal2': {
+        'common': 'vcu2 mali-g78ae'
     }
 }
 
@@ -80,7 +83,8 @@ def GetMachineFeatures(args, system_conffile):
     machine_features = ''
 
     if args.soc_family in Machinefeatures_soc.keys():
-        machine_features = Machinefeatures_soc[args.soc_family].get(args.soc_variant, '')
+        machine_features = Machinefeatures_soc[args.soc_family].get('common', '')
+        machine_features += ' %s' % Machinefeatures_soc[args.soc_family].get(args.soc_variant, '')
 
     is_fpga_manager = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
@@ -499,7 +503,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += 'include conf/machine/include/%s/${BB_CURRENT_MC}-features.conf\n' % args.machine
     machine_override_string += 'LIBXIL_CONFIG = "conf/machine/include/%s/${BB_CURRENT_MC}-libxil.conf"\n' % args.machine
 
-    if args.soc_family == 'versal':
+    if args.soc_family in ('versal', 'versal2'):
         if os.path.isdir(args.pl):
             pdis = glob.glob(os.path.join(args.pl, '*.pdi'))
             if not pdis:
