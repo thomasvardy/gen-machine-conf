@@ -202,7 +202,7 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
     if 'AsuTune' in MultiConfDict:
         machine_override_string += 'TUNEFILE[%s] = "%s"\n' % (
             MultiConfDict['AsuTune'],
-            os.path.join('conf', 'machine', 'include', args.machine, 'microblaze.inc'))
+            os.path.join('conf', 'machine', 'include', args.machine, 'microblaze-riscv.inc'))
 
     # Linux baremeal file pointers and dependencies
     if 'FsblMcDepends' in MultiConfDict:

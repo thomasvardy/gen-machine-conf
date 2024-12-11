@@ -81,7 +81,7 @@ class ParseMultiConfigFiles():
                 self.MultiConfMin.append(mc_name)
                 self.MultiConfMap[mc_name] = { 'cpuname' : self.cpuname, 'cpu' : self.cpu, 'core' : self.core, 'domain' : self.domain, 'os_hint' : self.os_hint };
             elif self.cpu == 'asu-microblaze-riscv':
-                mc_name = 'microblaze-asu-riscv'
+                mc_name = 'microblaze-riscv-asu'
                 self.MultiConfFiles.append(mc_name)
                 self.MultiConfMin.append(mc_name)
                 self.MultiConfMap[mc_name] = { 'cpuname' : self.cpuname, 'cpu' : self.cpu, 'core' : self.core, 'domain' : self.domain, 'os_hint' : self.os_hint };
@@ -108,7 +108,7 @@ class GenerateMultiConfigFiles():
                      'pmu-microblaze' : 'microblaze-pmu',
                      'pmc-microblaze' : 'microblaze-pmc',
                      'psm-microblaze' : 'microblaze-psm',
-                     'asu-microblaze-riscv' : 'microblaze-asu-riscv' }
+                     'asu-microblaze-riscv' : 'microblaze-riscv-asu' }
 
         if not self.MultiConfUser or not self.MultiConfMap:
             logger.debug("No multilibs enabled.")

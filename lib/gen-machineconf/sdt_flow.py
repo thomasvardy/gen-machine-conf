@@ -582,6 +582,25 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                                   mode='a+')
         self.MBTunesDone = True
 
+    # Asu part
+    def MBRiscVTuneFeatures(self):
+        logger.info('Generating microblaze riscv processor tunes')
+        #stdout = RunLopperUsingDomainFile(['lop-microblaze-yocto.dts'],
+        #                                  self.args.output, os.getcwd(), self.args.hw_file)
+        MB_riscv_variables = '# compatible = "asu-microblaze-riscv";\n'
+        MB_riscv_variables += 'TUNEVALID[rv32imac_zicsr_zifencei] = "Enable-march=rv32imac_zicsr_zifencei"\n'
+        MB_riscv_variables += 'TUNE_CCARGS:append = "${@bb.utils.contains(\'TUNE_FEATURES\', \'rv32imac_zicsr_zifencei\', \' -march=rv32imac_zicsr_zifencei\', \' \', d)}"\n'
+        MB_riscv_variables += 'AVAILTUNES += "microblaze-riscv-asu"\n'
+        MB_riscv_variables += 'TUNE_FEATURES:tune-microblaze-riscv-asu = "riscv32nf rv32imac_zicsr_zifencei"\n'
+        MB_riscv_variables += 'TUNE_ARCH:tune-microblaze-riscv-asu = "riscv32"\n'
+        MB_riscv_variables += 'TUNE_PKGARCH:tune-microblaze-riscv-asu = "riscv32nf"\n'
+        MB_riscv_variables += 'PACKAGE_EXTRA_ARCHS:tune-microblaze-riscv-asu = "${TUNE_PKGARCH}"\n'
+        microblaze_riscv_inc = os.path.join(self.args.bbconf_dir, 'microblaze-riscv.inc')
+        common_utils.AddStrToFile(microblaze_riscv_inc, MB_riscv_variables)
+        common_utils.AddStrToFile(microblaze_riscv_inc,
+                                  '\nrequire conf/machine/include/riscv/tune-riscv.inc\n',
+                                  mode='a+')
+
     def PmuMicroblaze(self):
         ''' pmu-microblaze is ALWAYS Baremetal, no domain'''
         logger.info('Generating microblaze baremetal configuration for ZynqMP PMU')
@@ -603,7 +622,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
 
     def AsuMicroblaze(self):
         logger.info('Generating microblaze baremetal configuration for Versal2 ASU')
-        self.MBTuneFeatures()
+        self.MBRiscVTuneFeatures()
         # TARGET_CFLAGS need to be update
         extra_conf_str = ''
         self.GenLibxilFeatures('', extra_conf_str)
