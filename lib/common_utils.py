@@ -329,10 +329,13 @@ def ValidateHashFile(output, macro, infile, update=True):
     return True
 
 
-def check_tool(tool, recipe=None, failed_msg=None):
+def check_tool(tool, recipe=None, failed_msg=None, skip_path=False):
     '''Check the tool exists in PATH variable'''
     tool = tool.lower()
-    tool_path = shutil.which(tool)
+    if skip_path:
+        tool_path = ''
+    else:
+        tool_path = shutil.which(tool)
     if not tool_path:
         if recipe:
             try:
@@ -400,21 +403,38 @@ def GetFilesFromDir(dirpath, file_ext=''):
     return FilesList
 
 
-def GetLopperUtilsPath():
-    lopper = check_tool('lopper',
-                   'esw-conf-native',
-                   'Unable to find lopper, please ensure this is in your '
-                   'environment or lopper can be built by bitbake. See README-setup '
-                   'in meta-xilinx layer for more details.')
-
+def CheckLopperUtilsPaths(lopper):
     lopper_dir = os.path.dirname(lopper)
-    lops_dir = glob.glob(os.path.join(os.path.dirname(lopper_dir),
-                                      'lib', 'python*', 'site-packages', 'lopper', 'lops'))[0]
+    _lops_dir = glob.glob(os.path.join(os.path.dirname(lopper_dir),
+                                      'lib', 'python*', 'site-packages', 'lopper', 'lops'))
+    lops_dir = ''
+    if _lops_dir:
+        lops_dir = _lops_dir[0]
+
+    embeddedsw = os.path.join(os.path.dirname(lopper_dir), 'share', 'embeddedsw')
+
+    return lopper, lopper_dir, lops_dir, embeddedsw
+
+
+def GetLopperUtilsPath():
+    lopper_err_msg = 'Unable to find lopper, please ensure this is in your '
+    lopper_err_msg += 'environment or lopper can be built by bitbake. See README-setup '
+    lopper_err_msg += 'in meta-xilinx layer for more details.'
+
+    lopper = check_tool('lopper', 'esw-conf-native', lopper_err_msg)
+
+    lopper, lopper_dir, lops_dir, embeddedsw = CheckLopperUtilsPaths(lopper)
+
+    '''Check if lopper from PATH have all required directories, if not construct the sysroot'''
+    if (lops_dir and not os.path.isdir(lops_dir)) or not os.path.isdir(embeddedsw):
+        logger.warning("The lopper 'lops' or 'embeddedsw configuration' files are missing, Trying to get recipe sysroot using bitbake")
+        lopper = check_tool('lopper', 'esw-conf-native', lopper_err_msg, skip_path=True)
+        lopper, lopper_dir, lops_dir, embeddedsw = CheckLopperUtilsPaths(lopper)
+
     if not os.path.isdir(lops_dir):
         raise Exception("The lopper 'lops' are missing.")
 
-    embeddedsw = os.path.join(os.path.dirname(
-        lopper_dir), 'share', 'embeddedsw')
+    embeddedsw = os.path.join(os.path.dirname(lopper_dir), 'share', 'embeddedsw')
 
     if not os.path.isdir(embeddedsw):
         raise Exception("The embeddedsw configuration files are missing.")
