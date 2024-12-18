@@ -976,7 +976,8 @@ def register_commands(subparsers):
     parser_sdt.add_argument('-l', '--localconf', metavar='<config_file>',
                             help='Write local.conf changes to this file', type=os.path.realpath)
     parser_sdt.add_argument('--multiconfigfull', action='store_true',
-                            help='Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal)')
+                            help='Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal.'
+                                ' Search for CONFIG_YOCTO_BBMC prefix in --menuconfig to get the available multiconfig targets.')
     parser_sdt.add_argument('--dts-path', metavar='<dts_path>',
                             help='Absolute path or subdirectory of conf/dts to place DTS files in (usually auto detected from DTS)')
     parser_sdt.add_argument('--openamp', action='store_true',
