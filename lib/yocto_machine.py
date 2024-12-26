@@ -206,12 +206,46 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
 
     # Linux baremeal file pointers and dependencies
     if 'FsblMcDepends' in MultiConfDict:
+        FsblFrom = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_FSBL_FROM_',
+                                                system_conffile, 'choice', '=y').lower()
+        FsblDepends = FsblMcDepends = FsblImageName = ''
+
+        if FsblFrom in ('sdt_path'):
+            FsblDepends = '${SYSTEM_DTFILE_DEPENDS}:do_populate_sysroot'
+            FsblDeployDir = '${SYSTEM_DTFILE_DIR}'
+            FsblImageName = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_FSBL_ELF_NAME',
+                                                        system_conffile)
+            if FsblImageName.endswith('.elf'):
+                FsblImageName = FsblImageName.rsplit('.elf', 1)[0]
+            tmp_fsblpath = os.path.join(os.path.dirname(args.hw_file), FsblImageName) + '.elf'
+            if not FsblImageName:
+                logger.warning('CONFIG_SUBSYSTEM_COMPONENT_FSBL_ELF_NAME is not specified, Defaulting to fsbl.elf')
+            elif not os.path.isfile(tmp_fsblpath):
+                logger.warning('Specified FSBL elf doesnot found : %s, '
+                    'Make sure you specified proper .elf file' % tmp_fsblpath)
+        elif FsblFrom in ('local_path'):
+            FsblLocalPath = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_FSBL_ELF_PATH',
+                                                        system_conffile)
+            FsblDeployDir = os.path.dirname(FsblLocalPath)
+            FsblImageName = os.path.basename(FsblLocalPath)
+            if FsblImageName.endswith('.elf'):
+                FsblImageName = FsblImageName.rsplit('.elf', 1)[0]
+            tmp_fsblpath = os.path.join(FsblDeployDir, FsblImageName) + '.elf'
+            if not FsblLocalPath:
+                logger.warning('CONFIG_SUBSYSTEM_COMPONENT_FSBL_ELF_PATH is not specified. '
+                        'Please specify the proper .elf file to avoid build failures')
+            elif not os.path.isfile(tmp_fsblpath):
+                logger.warning('Specified FSBL elf doesnot found : %s, '
+                    'Make sure you specified proper .elf file' % tmp_fsblpath)
+        else:
+            FsblMcDepends = MultiConfDict.get('FsblMcDepends')
+            FsblDeployDir = MultiConfDict.get('FsblDeployDir')
         machine_override_string += '\n# First Stage Boot Loader\n'
-        machine_override_string += 'FSBL_DEPENDS = ""\n'
-        machine_override_string += 'FSBL_MCDEPENDS = "%s"\n' % MultiConfDict.get(
-            'FsblMcDepends')
-        machine_override_string += 'FSBL_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
-            'FsblDeployDir').rstrip('/')
+        machine_override_string += 'FSBL_DEPENDS = "%s"\n' % FsblDepends
+        machine_override_string += 'FSBL_MCDEPENDS = "%s"\n' % FsblMcDepends
+        machine_override_string += 'FSBL_DEPLOY_DIR = "%s"\n' % FsblDeployDir.rstrip('/')
+        if FsblImageName:
+            machine_override_string += 'FSBL_IMAGE_NAME = "%s"\n' % FsblImageName
 
     if 'R5FsblMcDepends' in MultiConfDict:
         machine_override_string += '\n# Cortex-R5 First Stage Boot Loader\n'
@@ -230,12 +264,54 @@ def YoctoMCFimwareConfigs(args, arch, dtg_machine, system_conffile, req_conf_fil
             'PmuFWDeployDir').rstrip('/')
 
     if 'PlmMcDepends' in MultiConfDict:
+        PlmFrom = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_PLM_FROM_',
+                                                system_conffile, 'choice', '=y').lower()
+        PlmDepends = PlmMcDepends = PlmImageName = RemovePlm = ''
+
+        if PlmFrom in ('base_pdi'):
+            PlmDeployDir = 'undefined'
+            PlmImageName = 'undefined'
+            RemovePlm = True
+        elif PlmFrom in ('sdt_path'):
+            PlmDepends = '${SYSTEM_DTFILE_DEPENDS}:do_populate_sysroot'
+            PlmDeployDir = '${SYSTEM_DTFILE_DIR}'
+            PlmImageName = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_PLM_ELF_NAME',
+                                                        system_conffile)
+            if PlmImageName.endswith('.elf'):
+                PlmImageName = PlmImageName.rsplit('.elf', 1)[0]
+            tmp_plmpath = os.path.join(os.path.dirname(args.hw_file), PlmImageName) + '.elf'
+            if not PlmImageName:
+                logger.warning('CONFIG_SUBSYSTEM_COMPONENT_PLM_ELF_NAME is not specified, Defaulting to plm.elf')
+            elif not os.path.isfile(tmp_plmpath):
+                logger.warning('Specified PLM elf doesnot found : %s, '
+                    'Make sure you specified proper .elf file' % tmp_plmpath)
+        elif PlmFrom in ('local_path'):
+            PlmLocalPath = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_PLM_ELF_PATH',
+                                                        system_conffile)
+            PlmDeployDir = os.path.dirname(PlmLocalPath)
+            PlmImageName = os.path.basename(PlmLocalPath)
+            if PlmImageName.endswith('.elf'):
+                PlmImageName = PlmImageName.rsplit('.elf', 1)[0]
+            tmp_plmpath = os.path.join(PlmDeployDir, PlmImageName) + '.elf'
+            if not PlmLocalPath:
+                logger.warning('CONFIG_SUBSYSTEM_COMPONENT_PLM_ELF_PATH is not specified. '
+                        'Please specify the proper .elf file to avoid build failures')
+            elif not os.path.isfile(tmp_plmpath):
+                logger.warning('Specified PLM elf doesnot found : %s, '
+                    'Make sure you specified proper .elf file' % tmp_plmpath)
+        else:
+            PlmMcDepends = MultiConfDict.get('PlmMcDepends')
+            PlmDeployDir = MultiConfDict.get('PlmDeployDir')
+
         machine_override_string += '\n# Platform Loader and Manager\n'
-        machine_override_string += 'PLM_DEPENDS = ""\n'
-        machine_override_string += 'PLM_MCDEPENDS = "%s"\n' % MultiConfDict.get(
-            'PlmMcDepends')
-        machine_override_string += 'PLM_DEPLOY_DIR = "%s"\n' % MultiConfDict.get(
-            'PlmDeployDir').rstrip('/')
+        machine_override_string += 'PLM_DEPENDS = "%s"\n' % PlmDepends
+        machine_override_string += 'PLM_MCDEPENDS = "%s"\n' % PlmMcDepends
+        machine_override_string += 'PLM_DEPLOY_DIR = "%s"\n' % PlmDeployDir.rstrip('/')
+        if PlmImageName:
+            machine_override_string += 'PLM_IMAGE_NAME = "%s"\n' % PlmImageName
+        if RemovePlm:
+            machine_override_string += '\n# Remove the PLM from Boot.bin\n'
+            machine_override_string += 'BIF_PARTITION_ATTR:remove = "plmfw"\n'
 
     if 'PsmMcDepends' in MultiConfDict:
         machine_override_string += '\n# PSM Firware\n'
