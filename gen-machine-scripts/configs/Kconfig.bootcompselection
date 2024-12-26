@@ -1,0 +1,90 @@
+# Copyright (C) 2024, Advanced Micro Devices, Inc.  All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+
+if SUBSYSTEM_ARCH_ARM || SUBSYSTEM_ARCH_AARCH64
+
+menu "Boot Components Selection"
+
+if SYSTEM_VERSAL
+choice
+prompt "PLM"
+config SUBSYSTEM_COMPONENT_PLM_FROM_SOURCE
+	bool "PLM From Source"
+	help
+	 Use the Embeddedsw Source code to build the PLM.
+
+config SUBSYSTEM_COMPONENT_PLM_FROM_BASE_PDI
+        bool "PLM From Base PDI"
+        help
+	 Use the PLM comes from Base PDI instead of built one.
+
+config SUBSYSTEM_COMPONENT_PLM_FROM_SDT_PATH
+        bool "PLM From SDT Path"
+        help
+	 Use the PLM comes from SDT dir/artifactory instead of built one.
+
+config SUBSYSTEM_COMPONENT_PLM_FROM_LOCAL_PATH
+        bool "PLM From local Path"
+        help
+	 Use the PLM from specified local path instead of build one.
+endchoice
+
+if SUBSYSTEM_COMPONENT_PLM_FROM_SDT_PATH
+config SUBSYSTEM_COMPONENT_PLM_ELF_NAME
+	string "PLM elf File Name"
+	default "plm.elf"
+	help
+	 Specify the Plm elf file name from System Device Tree Directory.
+endif
+
+if SUBSYSTEM_COMPONENT_PLM_FROM_LOCAL_PATH
+config SUBSYSTEM_COMPONENT_PLM_ELF_PATH
+	string "PLM elf File Path"
+	default ""
+	help
+	 Specify Full Path of Plm elf file. Ex: /home/<user>/plm.elf.
+endif
+
+endif
+
+if SUBSYSTEM_ARCH_ARM || SYSTEM_ZYNQMP
+choice
+prompt "FSBL"
+config SUBSYSTEM_COMPONENT_FSBL_FROM_SOURCE
+	bool "FSBL From Source"
+	help
+	 Use the Embeddedsw Source code to build the FSBL.
+
+config SUBSYSTEM_COMPONENT_FSBL_FROM_SDT_PATH
+        bool "FSBL From SDT Path"
+        help
+	 Use the FSBL comes from SDT dir/artifactory instead of built one.
+
+config SUBSYSTEM_COMPONENT_FSBL_FROM_LOCAL_PATH
+        bool "FSBL From Local Path"
+        help
+	 Use the FSBL from specified local path instead of build one.
+endchoice
+endif
+
+if SUBSYSTEM_COMPONENT_FSBL_FROM_SDT_PATH
+config SUBSYSTEM_COMPONENT_FSBL_ELF_NAME
+	string "FSBL elf File Name"
+	default "fsbl.elf"
+	help
+	 Specify the FSBL elf file name from System Device Tree Directory.
+endif
+
+if SUBSYSTEM_COMPONENT_FSBL_FROM_LOCAL_PATH
+config SUBSYSTEM_COMPONENT_FSBL_ELF_PATH
+	string "FSBL elf File Path"
+	default ""
+	help
+	 Specify Full Path of FSBL elf file. Ex: /home/<user>/fsbl.elf.
+endif
+
+endmenu
+
+endif
