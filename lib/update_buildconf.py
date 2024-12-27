@@ -84,8 +84,8 @@ def AddUserLayers(args):
     if add_layers:
         logger.info('Adding user layers')
     with open(layers_list, 'a') as layers_list_f:
-        for layer in add_layers:
-            if os.path.isdir(layer):
+        for layer in bb_layers:
+            if layer in add_layers and os.path.isdir(layer):
                 common_utils.Bitbake.shutdown()
                 logger.debug('Adding layer: %s' % layer)
                 command = 'bitbake-layers -F add-layer %s' % (layer)
