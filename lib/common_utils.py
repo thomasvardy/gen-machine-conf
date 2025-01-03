@@ -418,7 +418,7 @@ def CheckLopperUtilsPaths(lopper):
 
 def GetLopperUtilsPath():
     lopper_err_msg = 'Unable to find lopper, please ensure this is in your '
-    lopper_err_msg += 'environment or lopper can be built by bitbake. See README-setup '
+    lopper_err_msg += 'environment or lopper can be built by bitbake. See README.building.md '
     lopper_err_msg += 'in meta-xilinx layer for more details.'
 
     lopper = check_tool('lopper', 'esw-conf-native', lopper_err_msg)
