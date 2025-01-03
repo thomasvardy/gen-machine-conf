@@ -905,6 +905,12 @@ def ParseSDT(args):
     if cfg_machine:
         args.machine = cfg_machine
 
+    # In case domain file provided in config
+    domain_file_cfg = common_utils.GetConfigValue('CONFIG_YOCTO_MC_DOMAIN_FILEPATH',
+                                                    system_conffile)
+    if domain_file_cfg:
+        args.domain_file = os.path.expandvars(domain_file_cfg)
+
     # In case dts_path updated in config
     cfg_dtspath = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_DT_XSCT_WORKSPACE',
                                                      system_conffile)

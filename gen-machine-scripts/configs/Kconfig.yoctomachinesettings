@@ -62,4 +62,10 @@ if SUBSYSTEM_SDT_FLOW
 
 @@multiconfigmenustr@@
 
+config YOCTO_MC_DOMAIN_FILEPATH
+	string "Domain file Path"
+	default ""
+	help
+	  Specify the domain file path to use in the generation of multiconfig files.
+
 endif

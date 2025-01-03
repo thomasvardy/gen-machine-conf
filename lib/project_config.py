@@ -221,6 +221,11 @@ def PreProcessSysConf(args, system_conffile, hw_info):
         common_utils.UpdateConfigValue('CONFIG_SUBSYSTEM_PL_DT_OVERLAY_%s' %
                 args.gen_pl_overlay.replace('-','_').upper(), 'y', system_conffile)
 
+    # Domain file path from args to config
+    if hasattr(args, 'domain_file') and args.domain_file:
+        common_utils.UpdateConfigValue('CONFIG_YOCTO_MC_DOMAIN_FILEPATH',
+                                        '"%s"' % args.domain_file, system_conffile)
+
     # Read the configs from CLI and update system conf file
     for config in args.add_config:
         # Default assume macro stars with CONFIG_ else file
