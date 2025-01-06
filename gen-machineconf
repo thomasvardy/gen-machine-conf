@@ -244,9 +244,11 @@ def main():
                 global_args.hw_description = global_args.hw_description[7:]
 
             # PetaLinux workflow expects the hw_description path to be where we load and process from
-            hw_dir = os.path.dirname(global_args.hw_description)
+            if os.path.isfile(global_args.hw_description):
+                hw_dir = os.path.dirname(global_args.hw_description)
+            else:
+                hw_dir = global_args.hw_description
             localpath = global_args.hw_description
-
             global_args.src_uri = 'file://%s' % (global_args.hw_description)
 
             # A file path ends up 'downloading' in a recipe with the full path,
