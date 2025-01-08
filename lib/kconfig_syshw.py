@@ -195,7 +195,7 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
                   'psu_cortexa53': ['PMUFW', 'FSBL', 'TF-A', 'DTG'],
                   'psv_cortexa72': ['PLM', 'TF-A', 'DTG'],
                   'psx_cortexa78': ['PLM', 'TF-A', 'DTG'],
-                  'cortexa78': ['PLM', 'ASU', 'TF-A', 'DTG']
+                  'cortexa78': ['PLM', 'ASU', 'TF-A', 'OP-TEE', 'DTG']
                   }
     def_baudrates = ['600', '9600', '28800',
                      '115200', '230400', '460800', '921600']
@@ -208,7 +208,9 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             'U-boot and Linux' if comp == 'DTG' else comp)
         confstr += '\tIf you select \'manual\', you will need to add this variable\n'
         if comp == 'TF-A':
-            confstr += '\tATF_CONSOLE:forcevariable = "<serial_ipname>" in petalinuxbps.conf or local.conf\n'
+            confstr += '\tTFA_CONSOLE:forcevariable = "<serial_ipname>" in petalinuxbps.conf or local.conf\n'
+        elif comp == 'OP-TEE':
+            confstr += '\tOPTEE_CONSOLE:forcevariable = "<serial_number>" in petalinuxbps.conf or local.conf\n'
         else:
             confstr += '\tFor XSCT flow:\n'
             confstr += '\t YAML_SERIAL_CONSOLE_STDIN:forcevariable:pn-<recipename> = "<serial_ipname>"\n'
@@ -233,22 +235,22 @@ def GenConf_serial(IpsToAdd, slavesdict, proc_ipname, arch):
             if slave == 'manual':
                 continue
             serialconsole = slave
-            if comp == 'TF-A':
+            if comp in ['TF-A', 'OP-TEE']:
                 ip_name = slavesdict[slave].get('ip_name')
                 if ip_name == 'psu_uart':
                     if re.search(r'.*uart0.*', slave.replace('_', '')) or \
                             re.search(r'.*serial0.*', slave.replace('_', '')):
-                        serialconsole = 'cadence'
+                        serialconsole = 'cadence' if comp == 'TF-A' else '0'
                     elif re.search(r'.*uart1.*', slave.replace('_', '')) or \
                             re.search(r'.*serial1.*', slave.replace('_', '')):
-                        serialconsole = 'cadence1'
-                elif ip_name in ['psv_sbsauart', 'psx_sbsauart']:
+                        serialconsole = 'cadence1' if comp == 'TF-A' else '1'
+                elif ip_name in ['sbsauart', 'psv_sbsauart', 'psx_sbsauart']:
                     if re.search(r'.*uart0.*', slave.replace('_', '')) or \
                             re.search(r'.*serial0.*', slave.replace('_', '')):
-                        serialconsole = 'pl011'
+                        serialconsole = 'pl011' if comp == 'TF-A' else '0'
                     elif re.search(r'.*uart1.*', slave.replace('_', '')) or \
                             re.search(r'.*serial1.*', slave.replace('_', '')):
-                        serialconsole = 'pl011_1'
+                        serialconsole = 'pl011_1' if comp == 'TF-A' else '1'
                 else:
                     serialconsole = 'dcc'
             serialconfstr += '\tdefault %s if SUBSYSTEM_%sSERIAL_%s_SELECT\n' % (

@@ -105,7 +105,7 @@ def YoctoCommonConfigs(args, arch, system_conffile):
         atf_serial_manual = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_SERIAL_MANUAL_SELECT',
                                                         system_conffile)
         if not atf_serial_manual:
-            machine_override_string += 'ATF_CONSOLE ?= "%s"\n' % atf_serial_ip_name
+            machine_override_string += 'TFA_CONSOLE ?= "%s"\n' % atf_serial_ip_name
         atf_mem_settings = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEMORY_SETTINGS',
                                                        system_conffile)
         atf_mem_base = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_TF-A_MEM_BASE',
@@ -127,6 +127,14 @@ def YoctoCommonConfigs(args, arch, system_conffile):
                                        ' = " %s"\n' % atf_extra_settings
         if atf_bl33_offset:
             machine_override_string += 'TFA_BL33_LOAD ?= "%s"\n' % atf_bl33_offset
+
+        optee_serial_ip_name = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_SERIAL_OP-TEE_IP_NAME',
+                                                        system_conffile)
+        optee_serial_manual = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_OP-TEE_SERIAL_MANUAL_SELECT',
+                                                        system_conffile)
+        if optee_serial_ip_name and not optee_serial_manual:
+            machine_override_string += '\n# Yocto OP-TEE variables\n'
+            machine_override_string += 'OPTEE_CONSOLE ?= "%s"\n' % optee_serial_ip_name
 
     ddr_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
                                                'asterisk', '_BASEADDR=')
