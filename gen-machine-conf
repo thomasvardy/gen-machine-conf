@@ -343,9 +343,11 @@ def main():
     common_utils.AddNativeSysrootPath(args.native_sysroot)
 
     # We need conf and mconf
-    common_utils.check_tool('mconf', 'kconfig-frontends-native', 'Tool mconf is required but not found')
+    common_utils.check_tool('mconf', 'kconfig-frontends-native',
+            'Tool mconf is required but not found, Check the README.md for how to use --native-sysroot')
 
-    common_utils.check_tool('conf', 'kconfig-frontends-native', 'Tool conf is required but not found')
+    common_utils.check_tool('conf', 'kconfig-frontends-native',
+            'Tool conf is required but not found, Check the README.md for how to use --native-sysroot')
 
     ret = args.func(args)
     return ret

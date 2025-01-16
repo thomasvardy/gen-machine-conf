@@ -244,3 +244,26 @@ $ gen-machineconf --soc-family <soc_family> --hw-description <PATH_TO_CUSTOM_XSA
 $ gen-machineconf --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
 
 ```
+
+* Using gen-machineconf with native sysroot:
+
+The Gen-machineconf utility needs the additional host tools like conf, mconf and lopper tools.
+You can get these tools by downloading and installing pre-built buildtools installer from
+https://petalinux.xilinx.com/sswreleases/<VERSION>/sdkupdate/buildtools.
+
+```bash
+# Locate and download the pre-built buildtools
+$ wget https://petalinux.xilinx.com/sswreleases/rel-v2024.2/sdkupdate/buildtools
+$ chmod a+x ./buildtools
+
+# Execute the installation script
+$ ./buildtools -d /<INSTALLATION_DIR>/x86-sysroot -y
+
+# Specify installed SDK to gen-machine-conf
+$ source /<INSTALLATION_DIR>/x86-sysroot/environment-setup-x86_64-petalinux-linux
+$ gen-machineconf --hw-description /<PATH_TO_SDTDIR>/
+
+(OR)
+$ gen-machineconf --hw-description /<PATH_TO_SDTDIR>/ --native-sysroot /<INSTALLATION_DIR>/x86-sysroot/sysroots/x86_64-petalinux-linux/
+
+```
