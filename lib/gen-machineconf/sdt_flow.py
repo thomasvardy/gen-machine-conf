@@ -152,7 +152,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             # if Domain file is present and RPU is target, attempt to invoke
             # openamp via gen_domain_dts plugin
             if lopdts in [ 'lop-r5-imux.dts', 'lop-r52-imux.dts' ]:
-                subcommand_args = ' -- gen_domain_dts ' + self.cpuname + ' --openamp_no_header '
+                subcommand_args = ' gen_domain_dts ' + self.cpuname + ' --openamp_no_header '
 
         if self.domain_yaml:
             domain_name = get_domain_name(self.cpuname, self.domain_yaml)
