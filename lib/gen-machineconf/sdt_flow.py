@@ -520,7 +520,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         logger.info('Generating microblaze riscv processor tunes')
         #stdout = RunLopperUsingDomainFile(['lop-microblaze-yocto.dts'],
         #                                  self.args.output, os.getcwd(), self.args.hw_file)
-        MB_riscv_variables = '# compatible = "asu-microblaze-riscv";\n'
+        MB_riscv_variables = '# compatible = "xlnx,asu-microblaze_riscv";\n'
         MB_riscv_variables += 'TUNEVALID[rv32imac_zicsr_zifencei] = "Enable-march=rv32imac_zicsr_zifencei"\n'
         MB_riscv_variables += 'TUNE_CCARGS:append = "${@bb.utils.contains(\'TUNE_FEATURES\', \'rv32imac_zicsr_zifencei\', \' -march=rv32imac_zicsr_zifencei\', \' \', d)}"\n'
         MB_riscv_variables += 'AVAILTUNES += "microblaze-riscv-asu"\n'
@@ -681,7 +681,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
                     self.PmcMicroblaze()
                 elif self.cpu == 'psm-microblaze':
                     self.PsmMicroblaze()
-                elif self.cpu == 'asu-microblaze-riscv':
+                elif self.cpu == 'xlnx,asu-microblaze_riscv':
                     self.AsuMicroblaze()
                 else:
                     logger.warning('Unknown CPU %s' % self.cpu)

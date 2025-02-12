@@ -79,13 +79,14 @@ Machinefeatures_soc = {
     }
 }
 
-def GetMachineFeatures(args, system_conffile):
+def GetMachineFeatures(args, system_conffile, MultiConfDict):
     machine_features = ''
 
     if args.soc_family in Machinefeatures_soc.keys():
         machine_features = Machinefeatures_soc[args.soc_family].get('common', '')
         machine_features += ' %s' % Machinefeatures_soc[args.soc_family].get(args.soc_variant, '')
-
+    if 'AsuTune' in MultiConfDict:
+        machine_features += 'asu'
     is_fpga_manager = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
     if is_fpga_manager == 'y':
@@ -137,7 +138,7 @@ def GetBootCompSource(args, comp, mcdepends, deploydir, MultiConfDict, system_co
     return CompDepends, CompMcDepends, CompDeployDir, CompImageName, RemoveComp
 
 
-def YoctoCommonConfigs(args, arch, system_conffile):
+def YoctoCommonConfigs(args, arch, system_conffile, MultiConfDict):
     machine_override_string = ''
     if arch == 'aarch64':
         baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
@@ -218,7 +219,7 @@ def YoctoCommonConfigs(args, arch, system_conffile):
         machine_override_string += 'KERNEL_EXTRA_ARGS += "UIMAGE_LOADADDR=${UBOOT_ENTRYPOINT}"\n'
 
 
-    machine_features = GetMachineFeatures(args, system_conffile)
+    machine_features = GetMachineFeatures(args, system_conffile, MultiConfDict)
     if machine_features:
         machine_override_string += '\n# Yocto MACHINE_FEATURES Variable\n'
         machine_override_string += 'MACHINE_FEATURES += "%s"\n' % (
@@ -492,7 +493,7 @@ def YoctoXsctConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mu
         machine_override_string += 'YAML_SERIAL_CONSOLE_BAUDRATE ?= "%s"\n' \
                                    % baudrate
 
-    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
+    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile, MultiConfDict)
 
     # Variables that changes based on hw design or board specific requirement must be
     # defined before calling the required inclusion file else pre-expansion value
@@ -532,7 +533,7 @@ def YoctoSdtConfigs(args, arch, dtg_machine, system_conffile, req_conf_file, Mul
     machine_override_string += 'CONFIG_DTFILE ?= "${CONFIG_DTFILE_DIR}/%s"\n' % os.path.basename(config_dtfile)
     machine_override_string += 'CONFIG_DTFILE[vardepsexclude] += "CONFIG_DTFILE_DIR"\n'
 
-    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile)
+    machine_override_string += YoctoCommonConfigs(args, arch, system_conffile, MultiConfDict)
 
     # Variables that changes based on hw design or board specific requirement must be
     # defined before calling the required inclusion file else pre-expansion value

@@ -80,7 +80,7 @@ class ParseMultiConfigFiles():
                 self.MultiConfFiles.append(mc_name)
                 self.MultiConfMin.append(mc_name)
                 self.MultiConfMap[mc_name] = { 'cpuname' : self.cpuname, 'cpu' : self.cpu, 'core' : self.core, 'domain' : self.domain, 'os_hint' : self.os_hint };
-            elif self.cpu == 'asu-microblaze-riscv':
+            elif self.cpu == 'xlnx,asu-microblaze_riscv':
                 mc_name = 'microblaze-riscv-asu'
                 self.MultiConfFiles.append(mc_name)
                 self.MultiConfMin.append(mc_name)
@@ -108,7 +108,7 @@ class GenerateMultiConfigFiles():
                      'pmu-microblaze' : 'microblaze-pmu',
                      'pmc-microblaze' : 'microblaze-pmc',
                      'psm-microblaze' : 'microblaze-psm',
-                     'asu-microblaze-riscv' : 'microblaze-riscv-asu' }
+                     'xlnx,asu-microblaze_riscv' : 'microblaze-riscv-asu' }
 
         if not self.MultiConfUser or not self.MultiConfMap:
             logger.debug("No multilibs enabled.")
@@ -147,7 +147,7 @@ class GenerateMultiConfigFiles():
                         self.MultiConfDict['PsmMcDepends'] = 'mc::%s:psm-firmware:do_deploy' % mc_filename
                         self.MultiConfDict['PsmFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
                         distro = 'xilinx-standalone-nolto'
-                    elif cpu == 'asu-microblaze-riscv':
+                    elif cpu == 'xlnx,asu-microblaze_riscv':
                         self.MultiConfDict['AsuTune'] = defaulttune
                         self.MultiConfDict['AsuMcDepends'] = 'mc::%s:asu-firmware:do_deploy' % mc_filename
                         self.MultiConfDict['AsuFWDeployDir'] = '${TMPDIR}-%s/deploy/images/${MACHINE}' % mc_filename
