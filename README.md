@@ -1,5 +1,5 @@
 ###### Copyright (C) 2021-2022, Xilinx, Inc.  All rights reserved.
-###### Copyright (C) 2022-2023, Advanced Micro Devices, Inc.  All rights reserved.
+###### Copyright (C) 2022-2025, Advanced Micro Devices, Inc.  All rights reserved.
 
 ###### SPDX-License-Identifier: MIT
 
@@ -68,10 +68,12 @@ gen-machineconf tool. Below is the gen-machineconf tool usage and examples.
 
 ```bash
 $ gen-machineconf --help
-[INFO] Getting bitbake BBPATH
-usage: gen-machineconf [--hw-description [<PATH_TO_XSA>/<xsa_name>.xsa] or <PATH_TO_SDTDIR>] [--soc-family] [--soc-variant] [--machine-name] [-c <config_dir>] [-r] [-O] [--output] [--native-sysroot]
-                       [--menuconfig [{project,rootfs}]] [--petalinux] [--add-rootfsconfig] [-D] [-h]
-                       <subcommand> ...
+NOTE: Starting bitbake server...
+usage: gen-machine-conf [--hw-description [<PATH_TO_XSA>/<xsa_name>.xsa] or <PATH_TO_SDTDIR>] [--soc-family {microblaze,zynq,zynqmp,versal,versal2}]
+                        [--soc-variant SOC_VARIANT] [--machine-name MACHINE] [-c <config_dir>] [-r REQUIRE_MACHINE] [-O MACHINE_OVERRIDES]
+                        [--output OUTPUT] [--native-sysroot NATIVE_SYSROOT] [--menuconfig [{project,rootfs}]] [--petalinux]
+                        [--add-config [CONFIG_<macro>=y]] [--add-rootfsconfig ADD_ROOTFSCONFIG] [-D] [-h]
+                        <subcommand> ...
 
 PetaLinux/Yocto Machine Configuration File generation tool
 
@@ -80,17 +82,21 @@ required arguments:
                         Specify Hardware(xsa) file or System Device-tree Directory
 
 options:
-  --soc-family          SOC family type from choice list (usually auto detected).
-  --soc-variant         SOC Variant: Ex: cg, dr, eg, ev, ai-prime, premium (usually auto detected).
-  --machine-name        Provide a name to generate machine configuration
+  --soc-family {microblaze,zynq,zynqmp,versal,versal2}
+                        SOC family type from choice list (usually auto detected).
+  --soc-variant SOC_VARIANT
+                        SOC Variant: Ex: cg, dr, eg, ev, ai-prime, premium (usually auto detected).
+  --machine-name MACHINE
+                        Provide a name to generate machine configuration
   -c <config_dir>, --config-dir <config_dir>
                         Location of the build conf directory
-  -r , --require-machine
+  -r REQUIRE_MACHINE, --require-machine REQUIRE_MACHINE
                         This machine will be required, instead of the generic machine if defined
-  -O , --machine-overrides
+  -O MACHINE_OVERRIDES, --machine-overrides MACHINE_OVERRIDES
                         Provide additional overrides to the generated machine
-  --output              Output directory name
-  --native-sysroot      Native sysroot path to use the mconf/conf or lopper commands.
+  --output OUTPUT       Output directory name
+  --native-sysroot NATIVE_SYSROOT
+                        Native sysroot path to use the mconf/conf or lopper commands.
   --menuconfig [{project,rootfs}]
                         UI menuconfig option to update configuration(default is project).
                         project - To update System Level configurations
@@ -98,16 +104,17 @@ options:
   --petalinux           Generate Rootfs and PetaLinux Tool conf files and update the build/local.conf file with generated .conf files.
   --add-config [CONFIG_<macro>=y]
                         Specify config macro or file containing config macros to be added on top of default configs
-  --add-rootfsconfig    Specify a file with list of package names to add into rootfs menu entry
+  --add-rootfsconfig ADD_ROOTFSCONFIG
+                        Specify a file with list of package names to add into rootfs menu entry
   -D, --debug           Enable debug output
   -h, --help            show this help message and exit
 
 subcommands:
   <subcommand>
-    parse-xsa           Parse xsa file and generate Yocto/PetaLinux configurations.
     parse-sdt           Parse System devicet-tree file and generate Yocto/PetaLinux configurations.
+    parse-xsa           Parse xsa file and generate Yocto/PetaLinux configurations.
 
-Use gen-machineconf <subcommand> --help to get help on a specific command
+Use gen-machine-conf <subcommand> --help to get help on a specific command
 $
 ```
 
@@ -115,12 +122,17 @@ $
 
 ```bash
 $ gen-machineconf parse-xsa --help
+NOTE: Starting bitbake server...
 usage: gen-machineconf parse-xsa [--hw-description <PATH_TO_XSA>/<xsa_name>.xsa] [other options]
 
 options:
   -h, --help            show this help message and exit
   --xsct-tool [XSCT_TOOL_PATH]
                         Vivado or Vitis XSCT path to use xsct commands
+  -l <config_file>, --localconf <config_file>
+                        Write local.conf changes to this file
+  --multiconfigfull     Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal
+  --multiconfigenable   Enable multiconfig support. default is disabled.
 $
 
 ```
@@ -129,6 +141,7 @@ $
 
 ```bash
 $ gen-machineconf parse-sdt --help
+NOTE: Starting bitbake server...
 usage: gen-machineconf parse-sdt [--hw-description <PATH_TO_SDTDIR>] [other options]
 
 options:
@@ -143,9 +156,11 @@ options:
                         Path to pdi or bitstream file
   -l <config_file>, --localconf <config_file>
                         Write local.conf changes to this file
-  --multiconfigfull     Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal)
+  --multiconfigfull     Generate/Enable Full set of multiconfig .conf and .dts files. Default is minimal. Search for CONFIG_YOCTO_BBMC prefix in
+                        --menuconfig to get the available multiconfig targets.
   --dts-path <dts_path>
                         Absolute path or subdirectory of conf/dts to place DTS files in (usually auto detected from DTS)
+$
 ```
 
 > **Note:**
@@ -161,6 +176,8 @@ $ gen-machineconf parse-xsa --soc-family microblaze --hw-description /<PATH_TO_C
 
 # BSP method:
 $ gen-machineconf parse-xsa --soc-family microblaze --hw-description /<PATH_TO_HDF_ARTIFACTORY>/kc705-microblazeel/system.xsa --machine-name kc705-microblazeel --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+
+  HDF_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>
 ```
 
 * Zynq-7000 XSCT Method:
@@ -171,6 +188,8 @@ $ gen-machineconf parse-xsa --soc-family zynq --hw-description /<PATH_TO_CUSTOM_
 
 # BSP method:
 $ gen-machineconf  parse-xsa --soc-family zynq --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zc702-zynq7/system.xsa --machine-name zc702-zynq7 --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+
+  HDF_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>
 ```
 
 * Zynq-7000 SDT Method:
@@ -181,6 +200,8 @@ $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/
 
 # With full bitstream pl overlay
 $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt -g full
+
+  SDT_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/sdt/<VERSION>
 ```
 
 * ZynqMP XSCT Method:
@@ -191,6 +212,8 @@ $ gen-machineconf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_CUSTO
 
 # BSP method:
 $ gen-machineconf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zcu106-zynqmp/system.xsa --machine-name zcu106-zynqmp --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+
+  HDF_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>
 ```
 
 * ZynqMP SDT Method:
@@ -204,6 +227,8 @@ $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/
 
 # With dfx static pl overlay
 $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+
+  SDT_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/sdt/<VERSION>
 ```
 
 * Versal XSCT Method:
@@ -214,6 +239,8 @@ $ gen-machineconf parse-xsa --soc-family versal --hw-description /<PATH_TO_CUSTO
 
 # BSP method:
 $ gen-machineconf parse-xsa --soc-family versal --hw-description /<PATH_TO_HDF_ARTIFACTORY>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+
+  HDF_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>
 ```
 
 * Versal SDT Method:
@@ -227,6 +254,8 @@ $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/
 
 # With dfx static pl overlay
 $ gen-machineconf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+
+  SDT_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/sdt/<VERSION>
 ```
 
 * Using gen-machineconf without subcommand:
@@ -243,13 +272,14 @@ $ gen-machineconf --soc-family <soc_family> --hw-description <PATH_TO_CUSTOM_XSA
 # SDT method
 $ gen-machineconf --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
 
+  SDT_ARTIFACTORY_PATH: https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/sdt/<VERSION>
 ```
 
 * Using gen-machineconf with native sysroot:
 
 The Gen-machineconf utility needs the additional host tools like conf, mconf and lopper tools.
 You can get these tools by downloading and installing pre-built buildtools installer from
-https://petalinux.xilinx.com/sswreleases/<VERSION>/sdkupdate/buildtools.
+https://petalinux.xilinx.com/sswreleases/<VERSION\>/sdkupdate/buildtools.
 
 ```bash
 # Locate and download the pre-built buildtools
