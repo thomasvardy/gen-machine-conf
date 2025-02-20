@@ -542,7 +542,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLibxilFeatures('', extra_conf_str)
 
     def PmcMicroblaze(self):
-        logger.info('Generating microblaze baremetal configuration for Versal PMC (PLM)')
+        logger.info('Generating microblaze baremetal configuration for %s PMC (PLM)' % self.args.soc_family)
         self.MBTuneFeatures()
         extra_conf_str = 'TARGET_CFLAGS += "-DVERSAL_PLM=1"\n'
         self.GenLibxilFeatures('', extra_conf_str)
@@ -554,7 +554,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLibxilFeatures('', extra_conf_str)
 
     def AsuMicroblaze(self):
-        logger.info('Generating microblaze baremetal configuration for Versal2 ASU')
+        logger.info('Generating microblaze baremetal configuration for %s ASU' % self.args.soc_family)
         self.MBRiscVTuneFeatures()
         # TARGET_CFLAGS need to be update
         extra_conf_str = ''
