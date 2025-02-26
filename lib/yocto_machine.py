@@ -87,6 +87,12 @@ def GetMachineFeatures(args, system_conffile, MultiConfDict):
         machine_features += ' %s' % Machinefeatures_soc[args.soc_family].get(args.soc_variant, '')
     if 'AsuTune' in MultiConfDict:
         machine_features += 'asu'
+
+    is_optee = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_OPTEE', system_conffile)
+    if is_optee == 'y':
+        machine_features += ' optee'
+
     is_fpga_manager = common_utils.GetConfigValue(
         'CONFIG_SUBSYSTEM_FPGA_MANAGER', system_conffile)
     if is_fpga_manager == 'y':

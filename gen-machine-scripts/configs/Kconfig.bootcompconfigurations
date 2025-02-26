@@ -94,6 +94,14 @@ endif
 endmenu
 endif
 
+menu "optee configuration"
+config SUBSYSTEM_OPTEE
+	bool "OP-TEE config"
+	default ""
+	help
+         Select this option for enable/disable OP-TEE
+endmenu
+
 if !SUBSYSTEM_COMPONENT_U__BOOT_NAME_NONE
 menu "u-boot Configuration"
 config SUBSYSTEM_UBOOT_CONFIG_TARGET
