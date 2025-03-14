@@ -5473,6 +5473,7 @@ config ofono-dbg
 	 help
 	
 endmenu
+if subsystem-sdt-flow
 menu "openamp-fw-echo-testd " 
 config openamp-fw-echo-testd  
 	 bool "openamp-fw-echo-testd"
@@ -5515,6 +5516,7 @@ config openamp-fw-rpc-demo-dbg
 	 help
 	
 endmenu
+endif
 menu "opkg-arch-config " 
 config opkg-arch-config  
 	 bool "opkg-arch-config"

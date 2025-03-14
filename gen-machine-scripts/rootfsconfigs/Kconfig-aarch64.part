@@ -5793,6 +5793,7 @@ config ofono-tests
 	 help
 	
 endmenu
+if subsystem-sdt-flow
 menu "openamp-fw-echo-testd " 
 config openamp-fw-echo-testd  
 	 bool "openamp-fw-echo-testd"
@@ -5835,6 +5836,7 @@ config openamp-fw-rpc-demo-dev
 	 help
 	
 endmenu
+endif
 menu "opkg-arch-config " 
 config opkg-arch-config  
 	 bool "opkg-arch-config"
@@ -9023,6 +9025,7 @@ config packagegroup-networking-stack-dev
 
 endmenu
 
+if subsystem-sdt-flow
 menu "packagegroup-openamp "
 config packagegroup-openamp
 	 bool "packagegroup-openamp"
@@ -9045,6 +9048,7 @@ config packagegroup-openamp-dbg
 	 help
 	
 endmenu
+endif
 menu "packagegroup-opencv "
 config packagegroup-opencv
 	 bool "packagegroup-opencv"
