@@ -420,10 +420,6 @@ def GeneratePlnxConfig(args, machine_conf_file):
     if dt_manual_include:
         override_string += 'KERNEL_INCLUDE:append:pn-device-tree = " %s"\n' \
                            % dt_include_dir
-    dt_openamp_dtsi = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_OPENAMP_DTSI',
-                                                  system_conffile)
-    if dt_openamp_dtsi:
-        override_string += 'ENABLE_OPENAMP_DTSI = "1"\n'
 
     dt_xenhw_dtsi = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_XEN_HW_DTSI',
                                                 system_conffile)
