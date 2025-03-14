@@ -29,6 +29,12 @@ config system-{0}
         default y
 '''
 
+Kconfig_sdt = '''
+config subsystem-sdt-flow
+        bool
+        default y
+        help
+'''
 
 def GenRootfsConfig(args, system_conffile):
     arch = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ARCH_',
@@ -73,6 +79,9 @@ def GenRootfsConfig(args, system_conffile):
             % (rfsconfig_py, user_cfg, rootfs_cfgdir)
         common_utils.RunCmd(cmd, args.output, shell=True)
     rfsKconfig_str = Kconfig_arch.format(args.soc_family)
+    if args.hw_flow == 'sdt':
+        rfsKconfig_str += Kconfig_sdt
+
     with open(rfsKconfig_part, 'r', encoding='utf-8') as rfskconfig_part_f:
         rfskconfig_part_data = rfskconfig_part_f.read()
     rfskconfig_part_f.close()
