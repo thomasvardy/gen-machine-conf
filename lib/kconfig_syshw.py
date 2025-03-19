@@ -119,6 +119,8 @@ def GenConf_memory(IpsToAdd, slavesdict, proc_ipname, arch):
 
         memoryconfstr += '\nconfig %s_U__BOOT_TEXTBASE_OFFSET\n' % memKconf
         memoryconfstr += '\thex "u-boot text base address"\n'
+        memoryconfstr += '\tdefault %s if SYSTEM_VERSAL2\n' % (
+            hex(int(baseaddr, base=16) + 0x4000000))
         memoryconfstr += '\tdefault %s if SUBSYSTEM_ARCH_AARCH64\n' % (
             hex(int(baseaddr, base=16) + 0x8000000))
         memoryconfstr += '\tdefault %s if SUBSYSTEM_ARCH_ARM\n' % (
