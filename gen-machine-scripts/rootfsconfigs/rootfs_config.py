@@ -77,8 +77,9 @@ def read_packages(xilinx_arch):
                 elif re.search("imagefeature-", line_str):
                     line_str = line_str.replace('imagefeature-', '')
                     packages.setdefault('image_features', []).append(line_str)
-                elif re.match("system-" + xilinx_arch, line_str):
+                elif re.match("system-" + xilinx_arch, line_str) or re.match("subsystem-sdt-flow", line_str):
                     # do nothing, skipp the package name with "system-<xilinx_arch>". Using to find system type
+                    # do nothing, skipp the package name with "subsystem-sdt-flow". Using to find system type
                     continue
                 else:
                     packages.setdefault('image_packages', []).append(line_str)
