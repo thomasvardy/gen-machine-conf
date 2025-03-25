@@ -179,120 +179,55 @@ $
 
 The below examples generally take one of five forms:
 
-1. `parse-xsa` Custom xsa; This is an example of using the `.xsa` file output by AMD Vivado&trade; Design Suite
-2. `parse-xsa` xsa from AMD; This is an example of using an AMD&trade; provided xsa from our JFrog Artifactory. `gen-machine-conf` is capable of ingesting these directly from the web at `https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>`
+1. `parse-xsa` Custom .xsa; This is an example of using the `.xsa` file output by AMD Vivado&trade; Design Suite
+2. `parse-xsa` .xsa from AMD; This is an example of using an AMD&trade; provided xsa from our JFrog Artifactory. `gen-machine-conf` is capable of ingesting these directly from the web at `https://petalinux.xilinx.com/sswreleases/rel-v<VERSION>/hdf-examples/<VERSION>`
 3. `parse-sdt` Without pl overlay; This method is for when users want their programmable logic loaded at boot by the AMD&trade; bootloaders
 4. `parse-sdt` With full bitstream pl overlay; This method is used when users want to delay loading of their programmable logic until the software (e.x. U-Boot, Linux) can perform the load.
 5. `parse-sdt` With dfx static pl overlay; This method is used when users want some of their programmable logic loaded by the AMD&trade; bootloaders but still have some re-configurable regions in their PL.
 
-#### MicroBlaze:
+#### .xsa file based (deprecated):
 
-> **Note:** MicroBlaze is not supported in system device tree generator at this time, so no `parse-sdt` examples exist.
 
 ```bash
-# Custom xsa:
-$ gen-machine-conf  --soc-family microblaze --hw-description /<PATH_TO_CUSTOM_XSA>/kc705-microblazeel/system.xsa --machine-name <your-custom-name>
+# Custom .xsa:
+$ gen-machine-conf --soc-family <microblaze|zynq|zynqmp|versal> --hw-description <path_to_custom_xsa>/<project_name>.xsa --machine-name <your-custom-name>
 ```
 
 ```bash
-# Xsa from AMD:
-$ gen-machine-conf parse-xsa --soc-family microblaze --hw-description <PATH_TO_HDF_ARTIFACTORY>/kc705-microblazeel/system.xsa --machine-name kc705-microblazeel
+# .xsa from AMD:
+$ gen-machine-conf --soc-family <microblaze|zynq|zynqmp|versal> --hw-description <path_to_hdf_artifactory>/<board_and_project_name>/system.xsa --machine-name <name_based_on_project>
 ```
 
-#### Zynq-7000 :
+#### System device tree based:
 
-```bash
-# Custom xsa method
-$ gen-machine-conf parse-xsa --soc-family zynq --hw-description <PATH_TO_CUSTOM_XSA>/zc702-zynq7/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
+> **Note:** MicroBlaze is not supported in system device tree generator at this time.
 
-```bash
-# Using a pre-canned HDF
-$ gen-machine-conf  parse-xsa --soc-family zynq --hw-description <PATH_TO_HDF_ARTIFACTORY>/zc702-zynq7/system.xsa --machine-name zc702-zynq7 --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
+> **Note:** Zinq-7000 does not support DFX static pl overlay
+
 
 ```bash
 # Without pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt
+$ gen-machine-conf --hw-description /<path_to_sdtdir>/ -c conf -l conf/local.conf --machine-name <your-custom-name>
 ```
 
 ```bash
 # With full bitstream pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynq7-zc702-sdt -g full
-```
-
-#### ZynqMP:
-
-```bash
-# Custom xsa method
-$ gen-machine-conf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_CUSTOM_XSA>/zcu106-zynqmp/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
-
-```bash
-# BSP method:
-$ gen-machine-conf parse-xsa --soc-family zynqmp --hw-description /<PATH_TO_HDF_ARTIFACTORY>/zcu106-zynqmp/system.xsa --machine-name zcu106-zynqmp --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
-
-```bash
-# Without pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
-```
-
-```bash
-# With full bitstream pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
+$ gen-machine-conf --hw-description /<path_to_sdtdir>/ -c conf -l conf/local.conf --machine-name <your-custom-name> -g full
 ```
 
 ```bash
 # With dfx static pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
+$ gen-machine-conf --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
 ```
 
-* Versal:
-
-```bash
-# Custom xsa method
-$ gen-machine-conf parse-xsa --soc-family versal --hw-description /<PATH_TO_CUSTOM_XSA>/vck190-versal/system.xsa --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
+#### Using a custom xsct install location
 
 ```bash
 # BSP method:
-$ gen-machine-conf parse-xsa --soc-family versal --hw-description /<PATH_TO_HDF_ARTIFACTORY>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
+$ gen-machine-conf parse-xsa --soc-family versal --hw-description /<path_to_hdf_artifactory>/vck190-versal/system.xsa --machine-name vck190-versal --xsct-tool /<Vitis_or_Petalinux_install_directory>/tools/xsct
 ```
 
-```bash
-# Without PL Overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
-```
-
-```bash
-# With segmented configuration pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g full
-```
-
-```bash
-# With dfx static pl overlay
-$ gen-machine-conf parse-sdt --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt -g dfx
-```
-
-* Using gen-machine-conf without subcommand:
-
-The Gen-machine-conf utility can be able to auto-detect the subcommand based on the file/URI specified with --hw-description.
-If xsa is specified, it uses the subcommand 'parse-xsa', and if system-top.dts is specified, it uses the subcommand 'parse-sdt'.
-If directory is specified and it contains both xsa and system-top.dts, priority will be given to system-top.dts, and subcommand
-will be 'parse-sdt'.
-
-```bash
-# xsa method
-$ gen-machine-conf --soc-family <soc_family> --hw-description <PATH_TO_CUSTOM_XSA> --xsct-tool /<PETALINUX_INSTALLATION_DIR>/tools/xsct
-```
-
-```bash
-# SDT method
-$ gen-machine-conf --hw-description /<PATH_TO_SDTDIR>/ -c conf -l conf/local.conf --machine-name zynqmp-zcu102-sdt
-```
-
-### Using gen-machine-conf with native sysroot:
+#### Using gen-machine-conf with native sysroot:
 
 `gen-machine-conf` needs the additional host tools like conf, mconf and lopper tools.
 You can get these tools by downloading and installing pre-built buildtools installer from
@@ -304,13 +239,13 @@ $ wget https://petalinux.xilinx.com/sswreleases/rel-v2024.2/sdkupdate/buildtools
 $ chmod a+x ./buildtools
 
 # Execute the installation script
-$ ./buildtools -d /<INSTALLATION_DIR>/x86-sysroot -y
+$ ./buildtools -d /<installation_dir>/x86-sysroot -y
 
 # Specify installed SDK to gen-machine-conf
-$ source /<INSTALLATION_DIR>/x86-sysroot/environment-setup-x86_64-petalinux-linux
-$ gen-machine-conf --hw-description /<PATH_TO_SDTDIR>/
+$ source /<installation_dir>/x86-sysroot/environment-setup-x86_64-petalinux-linux
+$ gen-machine-conf --hw-description /<path_to_sdtdir>/
 
 (OR)
-$ gen-machine-conf --hw-description /<PATH_TO_SDTDIR>/ --native-sysroot /<INSTALLATION_DIR>/x86-sysroot/sysroots/x86_64-petalinux-linux/
+$ gen-machine-conf --hw-description /<path_to_sdtdir>/ --native-sysroot /<installation_dir>/x86-sysroot/sysroots/x86_64-petalinux-linux/
 
 ```
