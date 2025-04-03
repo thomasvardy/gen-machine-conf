@@ -371,7 +371,7 @@ def register_commands(subparsers):
                                        ' <PATH_TO_XSA>/<xsa_name>.xsa] [other options]'
                                        )
     parser_xsa.add_argument('--xsct-tool', metavar='[XSCT_TOOL_PATH]',
-                            help='Vivado or Vitis XSCT path to use xsct commands')
+                            help='Vivado or Vitis XSCT path to use xsct commands (Optional if you are already have AMD tools in your path)')
 
     parser_xsa.add_argument('-l', '--localconf', metavar='<config_file>',
                             help='Write local.conf changes to this file', type=os.path.realpath)
