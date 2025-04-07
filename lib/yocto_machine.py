@@ -203,10 +203,9 @@ def YoctoCommonConfigs(args, arch, system_conffile, MultiConfDict):
     machine_override_string += '\n# Yocto KERNEL Variables\n'
     # Additional kernel make command-line arguments
     if args.soc_family == 'microblaze':
-        kernel_loadaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_',
-                                                      system_conffile, 'asterisk', '_BASEADDR=')
+        kernel_loadaddr = ddr_baseaddr
     else:
-        kernel_baseaddr = '0x0'
+        kernel_baseaddr = ddr_baseaddr
         kernel_offset = '0x200000'
         kernel_loadaddr = hex(int(kernel_baseaddr, 16) +
                             int(kernel_offset, 16))
