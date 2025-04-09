@@ -282,6 +282,7 @@ def main():
                 target = os.path.join(hw_dir, os.path.basename(global_args.hw_description))
 
                 if os.path.isdir(global_args.hw_description):
+                    common_utils.RemoveDir(target)
                     shutil.copytree(global_args.hw_description, target, dirs_exist_ok=True)
                     localpath = target
                 else:
