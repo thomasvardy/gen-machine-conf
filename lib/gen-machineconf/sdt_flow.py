@@ -308,7 +308,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt ps7_cortexa9_0 %s'
+                                      ps_dts_file, 'xlnx_overlay_dt cortexa9-zynq %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a9 file: %s and stored in intermediate ps dts file: %s'
@@ -359,7 +359,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt psu_cortexa53_0 %s'
+                                      ps_dts_file, 'xlnx_overlay_dt cortexa53-zynqmp %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a53 file: %s and stored in intermediate ps dts file: %s'
@@ -421,7 +421,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt psv_cortexa72_0 %s'
+                                      ps_dts_file, 'xlnx_overlay_dt cortexa72-versal %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a72 file: %s and stored in intermediate ps dts file: %s'
