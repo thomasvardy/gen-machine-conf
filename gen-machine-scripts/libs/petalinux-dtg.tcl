@@ -355,11 +355,15 @@ proc gen_part_table {fid tab} {
 }
 
 proc gen_dts_flash_node {fid machine_dtsi} {
-	global kconfig_dict
+	global kconfig_dict target_cpu
+	set cpu_arch [get_sw_proc_arch $target_cpu]
 	if {![dict exists $kconfig_dict flash]} {
 		return
 	}
 	set flash_inst_name [dict get $kconfig_dict flash inst_name]
+	if {![string match -nocase "microblaze" $cpu_arch] && [hsi::get_property IS_PL $flash_inst_name] == 1 } {
+		return
+	}
 	set flash_inst_name [ps_node_mapping ${flash_inst_name} label]
 	set flash_type [dict get $kconfig_dict flash flash_type]
 	puts $fid "&${flash_inst_name} \{"
