@@ -109,8 +109,10 @@ def RunLopperSubcommand(outdir, dts_path, hw_file, subcommand_args, lopper_args=
 
 def RunLopperPlOverlaycommand(outdir, dts_path, hw_file, ps_dts_file, subcommand_args, lopper_args=''):
     lopper, lopper_dir, lops_dir, embeddedsw = common_utils.GetLopperUtilsPath()
-    cmd = 'LOPPER_DTC_FLAGS="-b 0 -@" %s --enhanced -O %s %s %s %s -- %s' % (
-        lopper, outdir, lopper_args, hw_file, ps_dts_file, subcommand_args)
+    hw_dir = pathlib.Path(hw_file).parent
+    sdt_gen_pl_dtsi = f"{hw_dir}/pl.dtsi"
+    cmd = 'LOPPER_DTC_FLAGS="-b 0 -@" %s --enhanced -O %s %s %s %s -- %s %s' % (
+        lopper, outdir, lopper_args, hw_file, ps_dts_file, subcommand_args, sdt_gen_pl_dtsi)
     stdout = common_utils.RunCmd(cmd, dts_path, shell=True)
     return stdout
 
@@ -298,7 +300,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLinuxDts = True
         self.MultiConfDict['LinuxDT'] = dts_file
         logger.info('Generating cortex-a9 Linux configuration [ %s ]' % self.domain)
-        # Remove pl dt nodes from linux dts by running xlnx_overlay_dt script
+        # Remove pl dt nodes from linux dts by running xlnx_overlay_pl_dt script
         # in lopper. This script provides full, dfx(static) pl overlays.
         ps_dts_file = ''
         if self.gen_pl_overlay:
@@ -308,7 +310,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt cortexa9-zynq %s'
+                                      ps_dts_file, 'xlnx_overlay_pl_dt cortexa9-zynq %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a9 file: %s and stored in intermediate ps dts file: %s'
@@ -349,7 +351,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLinuxDts = True
         self.MultiConfDict['LinuxDT'] = dts_file
         logger.info('Generating cortex-a53 Linux configuration [ %s ]' % self.domain)
-        # Remove pl dt nodes from linux dts by running xlnx_overlay_dt script
+        # Remove pl dt nodes from linux dts by running xlnx_overlay_pl_dt script
         # in lopper. This script provides full, dfx(static) pl overlays.
         ps_dts_file = ''
         if self.gen_pl_overlay:
@@ -359,7 +361,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt cortexa53-zynqmp %s'
+                                      ps_dts_file, 'xlnx_overlay_pl_dt cortexa53-zynqmp %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a53 file: %s and stored in intermediate ps dts file: %s'
@@ -401,7 +403,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLinuxDts = True
         self.MultiConfDict['LinuxDT'] = dts_file
         logger.info('Generating cortex-a72 Linux configuration [ %s ]' % self.domain)
-        # Remove pl dt nodes from linux dts by running xlnx_overlay_dt script
+        # Remove pl dt nodes from linux dts by running xlnx_overlay_pl_dt script
         # in lopper. This script provides full(segmented configuration),
         # dfx(static) pl overlays.
         ps_dts_file = ''
@@ -421,7 +423,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt cortexa72-versal %s'
+                                      ps_dts_file, 'xlnx_overlay_pl_dt cortexa72-versal %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a72 file: %s and stored in intermediate ps dts file: %s'
@@ -463,7 +465,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
         self.GenLinuxDts = True
         self.MultiConfDict['LinuxDT'] = dts_file
         logger.info('Generating cortex-a78 Linux configuration [ %s ]' % self.domain)
-        # Remove pl dt nodes from linux dts by running xlnx_overlay_dt script
+        # Remove pl dt nodes from linux dts by running xlnx_overlay_pl_dt script
         # in lopper. This script provides full(segmented configuration),
         # dfx(static) pl overlays.
         ps_dts_file = ''
@@ -474,7 +476,7 @@ class sdtGenerateMultiConfigFiles(multiconfigs.GenerateMultiConfigFiles):
             ps_dts_file = os.path.join(self.args.dts_path, '%s-no-pl.dts'
                                        % pathlib.Path(self.args.hw_file).stem)
             RunLopperPlOverlaycommand(self.args.output, self.args.dts_path, self.args.hw_file,
-                                      ps_dts_file, 'xlnx_overlay_dt cortexa78_0 %s'
+                                      ps_dts_file, 'xlnx_overlay_pl_dt cortexa78_0 %s'
                                       % (self.gen_pl_overlay),
                                       '-f')
             logger.info('pl-overlay [ %s ] is enabled for cortex-a78 file: %s and stored in intermediate ps dts file: %s'
@@ -904,7 +906,7 @@ def register_commands(subparsers):
                                        ' <PATH_TO_SDTDIR>] [other options]'
                                        )
     parser_sdt.add_argument('-g', '--gen-pl-overlay', choices=['full', 'dfx'],
-                            help='Generate pl overlay for full, dfx configuration using xlnx_overlay_dt lopper script')
+                            help='Generate pl overlay for full, dfx configuration using xlnx_overlay_pl_dt lopper script')
     parser_sdt.add_argument('-d', '--domain-file', metavar='<domain_file>',
                             help='Path to domain file (.yaml/.dts)', type=os.path.realpath)
     parser_sdt.add_argument('-i', '--psu-init-path', metavar='<psu_init_path>',
