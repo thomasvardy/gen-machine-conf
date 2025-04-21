@@ -75,7 +75,7 @@ Machinefeatures_soc = {
         'ai-core': 'vdu', 'ai-edge': 'vdu'
     },
     'versal2': {
-        'common': 'vcu2 mali-g78ae'
+        'common': 'vcu2 malig78ae'
     }
 }
 
