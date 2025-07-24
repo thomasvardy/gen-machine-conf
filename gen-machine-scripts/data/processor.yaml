@@ -7,8 +7,6 @@ microblaze:
     ip_type: processor
     hsm:
         config:
-            CONFIG.C_FSL_LINKS:
-                uboot_config: XILINX_FSL_LINKS
             CONFIG.C_USE_BARREL:
                 uboot_config: XILINX_MICROBLAZE0_USE_BARREL
             CONFIG.C_USE_DIV:
@@ -25,9 +23,7 @@ microblaze:
                 uboot_config: XILINX_MICROBLAZE0_PVR
         define:
             IP_NAME:
-                uboot_config: CONFIG_DM CONFIG_SYS_MALLOC_F CONFIG_SYS_GENERIC_BOARD
+                uboot_config: CONFIG_DM CONFIG_SYS_MALLOC_F
         define_chk_1:
             CONFIG.C_USE_DCACHE:
                 uboot_config: CONFIG_DCACHE
-            CONFIG.C_USE_ICACHE:
-                uboot_config: CONFIG_ICACHE

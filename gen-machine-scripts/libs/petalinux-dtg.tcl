@@ -17,6 +17,7 @@ proc generate_system_dtsi {system_dtsi machine_dtsi} {
 	gen_dts_chosen $fid
 	gen_dts_memory_node $fid
 	gen_atf_reserved_node $fid
+	gen_dts_u_boot_node $fid
 	puts $fid "\};\n"
 	gen_dts_ethernet_node $fid
 	gen_dts_flash_node $fid ${machine_dtsi}
@@ -131,7 +132,7 @@ proc gen_dts_chosen {fid} {
 		}
 	}
 	puts $fid "\t\tstdout-path = \"${serial_node}:${uart_baudrate}n8\";"
-	puts $fid "\t\};"
+	puts $fid "\t\};\n"
 }
 
 proc gen_dts_ethernet_node {fid} {
@@ -259,7 +260,6 @@ proc gen_spi_flash_node {fid machine_dtsi} {
 	set cpu_arch [get_sw_proc_arch $target_cpu]
 	if {$cpu_arch == "microblaze"} {
 		set flash_inst_name [dict get $kconfig_dict flash inst_name]
-		set flash_bank [dict get $kconfig_dict flash bank]
 		set ip_obj [hsi get_cells -hier $flash_inst_name]
 		set prop_rt_code [catch {hsi get_property CONFIG.C_SCK_RATIO $ip_obj}]
 
@@ -340,6 +340,12 @@ proc gen_part_table {fid tab} {
 			puts $fid "${tab}\t\tlabel = \"${part_name}\";"
 			puts $fid "${tab}\t\treg = <${part_offset} ${part_size}>;"
 
+			if {[dict exists $kconfig_dict flash "part$part_no" "flags"]} {
+				set part_flag [dict get $kconfig_dict flash "part$part_no" "flags"]
+				if { "${part_flag}" == "ro" } {
+					puts $fid "${tab}\t\tread-only;"
+				}
+			}
 			puts $fid "${tab}\t\};"
 		} else {
 			break
@@ -349,11 +355,15 @@ proc gen_part_table {fid tab} {
 }
 
 proc gen_dts_flash_node {fid machine_dtsi} {
-	global kconfig_dict
+	global kconfig_dict target_cpu
+	set cpu_arch [get_sw_proc_arch $target_cpu]
 	if {![dict exists $kconfig_dict flash]} {
 		return
 	}
 	set flash_inst_name [dict get $kconfig_dict flash inst_name]
+	if {![string match -nocase "microblaze" $cpu_arch] && [hsi::get_property IS_PL $flash_inst_name] == 1 } {
+		return
+	}
 	set flash_inst_name [ps_node_mapping ${flash_inst_name} label]
 	set flash_type [dict get $kconfig_dict flash flash_type]
 	puts $fid "&${flash_inst_name} \{"
@@ -546,4 +556,42 @@ proc is_ps_ip {ip_inst} {
 		return 1
 	}
 	return 0
+}
+
+proc add_bootscr_flash_offset_size_prop {fid qspi_bootscr_offset qspi_bootscr_size} {
+	puts $fid "\t\t\tbootscr-flash-offset = /bits/ 64 <${qspi_bootscr_offset}>;"
+	puts $fid "\t\t\tbootscr-flash-size = /bits/ 64 <${qspi_bootscr_size}>;"
+}
+
+proc gen_dts_u_boot_node {fid} {
+	global kconfig_dict
+	set processor_ip_name [dict get $kconfig_dict processor ip_str]
+	set processor_ip_name [hsi get_property IP_NAME [hsi get_cells -hier $processor_ip_name]]
+	if {[string match {*microblaze*} $processor_ip_name]} {
+		return
+	}
+
+	if {[dict exists $kconfig_dict subsys_conf memory_manual_lower_baseaddr]} {
+		set memory_base_addr [dict get $kconfig_dict subsys_conf memory_manual_lower_baseaddr]
+	} else {
+		set memory_base_addr [dict get $kconfig_dict memory baseaddr]
+	}
+	set bootscr_offset [dict get $kconfig_dict subsys_conf uboot_bootscr_offset]
+	set qspi_bootscr_offset [dict get $kconfig_dict subsys_conf uboot_qspi_bootscr_offset]
+	set qspi_bootscr_size [dict get $kconfig_dict subsys_conf uboot_qspi_bootscr_size]
+	if {![catch {dict get $kconfig_dict subsys_conf uboot_append_baseaddr}]} {
+		set boot_script_loadaddr [format "0x%08x" [expr $memory_base_addr + $bootscr_offset]]
+	} else {
+		set boot_script_loadaddr $bootscr_offset
+	}
+
+	puts $fid "\toptions \{"
+	puts $fid "\t\tu-boot \{"
+	puts $fid "\t\t\tcompatible = \"u-boot,config\";"
+	puts $fid "\t\t\tbootscr-address = /bits/ 64 <${boot_script_loadaddr}>;"
+	if {![string match {*AUTO*} $qspi_bootscr_offset] && ![string match {*AUTO*} $qspi_bootscr_size]} {
+		add_bootscr_flash_offset_size_prop $fid $qspi_bootscr_offset $qspi_bootscr_size
+	}
+	puts $fid "\t\t\};"
+	puts $fid "\t\};"
 }

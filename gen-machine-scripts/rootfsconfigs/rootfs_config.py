@@ -52,7 +52,7 @@ def read_packages(xilinx_arch):
             packages['package_feed_archs'] = re.sub(
                 r'"|\]|\\', r'', package_feed_archs).rstrip("'")
         else:
-            if re.search("=y'\]", line_str):
+            if re.search(r"=y'\]", line_str):
                 line_str = line_str.split('_')[1]
                 line_str = line_str.split('=')[0]
                 line_str = fix_config_name(line_str)
@@ -77,8 +77,9 @@ def read_packages(xilinx_arch):
                 elif re.search("imagefeature-", line_str):
                     line_str = line_str.replace('imagefeature-', '')
                     packages.setdefault('image_features', []).append(line_str)
-                elif re.match("system-" + xilinx_arch, line_str):
+                elif re.match("system-" + xilinx_arch, line_str) or re.match("subsystem-sdt-flow", line_str):
                     # do nothing, skipp the package name with "system-<xilinx_arch>". Using to find system type
+                    # do nothing, skipp the package name with "subsystem-sdt-flow". Using to find system type
                     continue
                 else:
                     packages.setdefault('image_packages', []).append(line_str)
@@ -130,7 +131,7 @@ def add_user_params(packages, bb_file):
                 if param[1]:
                     result = subprocess.check_output(
                         ["openssl", "passwd", "-6", "-salt", "xx", param[1]]).strip()
-                    param[1] = str(result, "utf-8").replace('$', '\$')
+                    param[1] = str(result, "utf-8").replace('$', r'\$')
                     param[1] = " -p '" + param[1] + "'"
                 else:
                     param[1] = " -p ''"
@@ -183,6 +184,15 @@ def update_cfg(cfg_file, xilinx_arch):
         init_managerstr = 'INIT_MANAGER_DEFAULT = "' + \
             packages['Init_manager'] + '"\n\n'
         cfg_file.write(init_managerstr)
+    init_manager = packages['Init_manager']
+    if xilinx_arch in ('zynqmp', 'versal', 'versal-2ve-2vm'):
+        if init_manager == 'sysvinit':
+            unlock_sstates = 'SIGGEN_LOCKEDSIGS_TYPES = ""\n'
+            cfg_file.write(unlock_sstates)
+    elif xilinx_arch in ('zynq', 'microblaze'):
+         if init_manager == 'systemd':
+            unlock_sstates = 'SIGGEN_LOCKEDSIGS_TYPES = ""\n'
+            cfg_file.write(unlock_sstates)
     # Add Tune_feature variable
     if 'default_tune' in packages.keys():
         default_tunestr = 'DEFAULTTUNE = "cortexa72-cortexa53-crypto"\n'
@@ -196,9 +206,6 @@ def update_cfg(cfg_file, xilinx_arch):
     cfg_file.write('IMAGE_INSTALL:pn-petalinux-image-minimal = "\\\n')
     cfg_file.write("\t\tkernel-modules \\\n")
     write_list(cfg_file, packages['image_packages'])
-    if 'libmali-xlnx' in packages['image_packages']:
-        machine_features = 'MACHINE_FEATURES:append = " mali400"\n'
-        cfg_file.write(machine_features)
     if 'package_feeds' in packages.keys() and packages['package_feeds']:
         package_feedstr = 'PACKAGE_FEED_URIS = "' + \
             packages['package_feeds'] + '"\n\n'
@@ -381,7 +388,7 @@ def extract_value(Layers, value):
                             line = re.sub('"|\n', '', line)
                             line = line.split('=')[1]
                             strg = re.sub(
-                                '\.bb$|\.inc$|\.bbclass$', '', filename)
+                                r'\.bb$|\.inc$|\.bbclass$', '', filename)
                             strg = strg.split('_')[0]
                             value_dict[strg] = line.strip()
                     files_bb.close()

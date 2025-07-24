@@ -55,6 +55,12 @@ axi_noc:
             has_bank: n
             baseaddr: BASE_VALUE
             highaddr: HIGH_VALUE
+axi_noc2:
+    device_type:
+        memory:
+            has_bank: n
+            baseaddr: CONFIG.C_BASEADDR
+            highaddr: CONFIG.C_HIGHADDR
 axi_emc:
     device_type:
         memory:
@@ -177,6 +183,42 @@ ps7_uart:
     linux_kernel_properties:
         SERIAL_XILINX_PS_UART: bool y
 
+psu_coresight_0:
+    device_type:
+        serial:
+            baudrate_editable: y
+            baseaddr: CONFIG.C_S_AXI_BASEADDR
+            highaddr: CONFIG.C_S_AXI_HIGHADDR
+            linux_kernel_properties:
+                SERIAL_XILINX_PS_UART_CONSOLE: bool y
+            linux_console_file_name: hvc0 cpuidle.off=1 maxcpus=1
+            linux_earlycon_str: cdns,mmio
+    linux_kernel_properties:
+        SERIAL_XILINX_PS_UART: bool y
+psv_coresight:
+    device_type:
+        serial:
+            baudrate_editable: y
+            baseaddr: CONFIG.C_S_AXI_BASEADDR
+            highaddr: CONFIG.C_S_AXI_HIGHADDR
+            linux_kernel_properties:
+                SERIAL_XILINX_PS_UART_CONSOLE: bool y
+            linux_console_file_name: hvc0 cpuidle.off=1 maxcpus=1
+            linux_earlycon_str: cdns,mmio
+    linux_kernel_properties:
+        SERIAL_XILINX_PS_UART: bool y
+psx_coresight:
+    device_type:
+        serial:
+            baudrate_editable: y
+            baseaddr: CONFIG.C_S_AXI_BASEADDR
+            highaddr: CONFIG.C_S_AXI_HIGHADDR
+            linux_kernel_properties:
+                SERIAL_XILINX_PS_UART_CONSOLE: bool y
+            linux_console_file_name: hvc0 cpuidle.off=1 maxcpus=1
+            linux_earlycon_str: cdns,mmio
+    linux_kernel_properties:
+        SERIAL_XILINX_PS_UART: bool y
 axi_uart16550:
     device_type:
         serial:
@@ -269,6 +311,12 @@ psv_pmc_qspi:
             flash_prefix: qspi
 
 psv_pmc_qspi_ospi:
+    device_type:
+        flash:
+            flash_type: spi
+            flash_prefix: spi0
+
+psv_pmc_ospi:
     device_type:
         flash:
             flash_type: spi

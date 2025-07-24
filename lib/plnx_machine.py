@@ -8,34 +8,42 @@
 #
 # SPDX-License-Identifier: MIT
 
-from gen_yocto_machine import *
+import os
+import common_utils
+import logging
+import xilinx_mirrors
+import re
+import project_config
+from post_process_config import GetIPProperty
 
-plnx_conf_path = ''
+
+logger = logging.getLogger('Gen-Machineconf')
+
 global inherit_ext
 inherit_ext = ''
 
 
-def add_remote_sources(component, Kcomponent):
-    is_remote = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE'
-                                 % Kcomponent, default_cfgfile)
+def AddRemoteSources(component, Kcomponent):
+    is_remote = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE'
+                                            % Kcomponent, system_conffile)
     conf_prop = {
         'linux-xlnx': ['KERNELURI', 'SRCREV', 'KBRANCH', 'LIC_FILES_CHKSUM'],
         'u-boot-xlnx': ['UBOOTURI', 'SRCREV', 'UBRANCH', 'LIC_FILES_CHKSUM'],
-        'arm-trusted-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
+        'trusted-firmware-a': ['SRC_URI_TRUSTED_FIRMWARE_A', 'SRCREV_tfa', 'SRCBRANCH', 'LIC_FILES_CHKSUM'],
         'plm-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
         'psm-firmware': ['REPO', 'SRCREV', 'BRANCH', 'LIC_FILES_CHKSUM'],
     }
     remort_source = ''
     if is_remote:
         remort_source += '\n#Remote %s source\n' % component
-        remote_uri = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_DOWNLOAD_PATH'
-                                      % Kcomponent, default_cfgfile)
-        remote_rev = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_REFERENCE'
-                                      % Kcomponent, default_cfgfile)
-        remote_branch = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_BRANCH'
-                                         % Kcomponent, default_cfgfile)
-        remote_checksum = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_LIC_FILES_CHKSUM_REMOTE'
-                                           % Kcomponent, default_cfgfile)
+        remote_uri = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_DOWNLOAD_PATH'
+                                                 % Kcomponent, system_conffile)
+        remote_rev = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_REFERENCE'
+                                                 % Kcomponent, system_conffile)
+        remote_branch = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_REMOTE_BRANCH'
+                                                    % Kcomponent, system_conffile)
+        remote_checksum = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_LIC_FILES_CHKSUM_REMOTE'
+                                                      % Kcomponent, system_conffile)
         if remote_uri:
             remort_source += '%s:pn-%s = "%s"\n' \
                 % (conf_prop[component][0],
@@ -55,9 +63,9 @@ def add_remote_sources(component, Kcomponent):
     return remort_source
 
 
-def add_external_sources(component, Kcomponent):
-    is_external = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_EXT__LOCAL__SRC'
-                                   % Kcomponent, default_cfgfile)
+def AddExternalSources(component, Kcomponent):
+    is_external = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_EXT__LOCAL__SRC'
+                                              % Kcomponent, system_conffile)
     ext_source = ''
     if is_external:
         global inherit_ext
@@ -65,10 +73,10 @@ def add_external_sources(component, Kcomponent):
             ext_source += 'INHERIT += "externalsrc"\n'
             inherit_ext = True
         ext_source += '\n# External %s source\n' % component
-        ext_path = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_EXT_LOCAL_SRC_PATH'
-                                    % Kcomponent, default_cfgfile)
-        ext_checksum = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_%s_LIC_FILES_CHKSUM_LOCAL__SRC'
-                                        % Kcomponent, default_cfgfile)
+        ext_path = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_NAME_EXT_LOCAL_SRC_PATH'
+                                               % Kcomponent, system_conffile)
+        ext_checksum = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_%s_LIC_FILES_CHKSUM_LOCAL__SRC'
+                                                   % Kcomponent, system_conffile)
         if ext_source:
             ext_source += 'EXTERNALSRC:pn-%s = "%s"\n' \
                 % (component, ext_path)
@@ -78,9 +86,11 @@ def add_external_sources(component, Kcomponent):
     return ext_source
 
 
-def generate_kernel_cfg(args):
+def GenerateKernelCfg(args):
     logger.info('Generating kernel configuration files')
-    sysconf_koptions = os.path.join(scripts_dir, 'data/sysconf_koptions.yaml')
+    genmachine_scripts = project_config.GenMachineScriptsPath()
+    sysconf_koptions = os.path.join(
+        genmachine_scripts, 'data/sysconf_koptions.yaml')
     import yaml
     with open(sysconf_koptions, 'r') as sysconf_koptions_f:
         sysconf_koptions_data = yaml.safe_load(sysconf_koptions_f)
@@ -92,8 +102,8 @@ def generate_kernel_cfg(args):
         if 'is_valid_and' in sysconf_koptions_data['selected_device'][device].keys():
             for is_valid in sysconf_koptions_data['selected_device'][device]['is_valid_and'].keys():
                 value = sysconf_koptions_data['selected_device'][device]['is_valid_and'][is_valid]
-                cfg_value = get_config_value(
-                    'CONFIG_%s' % is_valid, default_cfgfile)
+                cfg_value = common_utils.GetConfigValue(
+                    'CONFIG_%s' % is_valid, system_conffile)
 
                 if value != 'n':
                     if cfg_value != value:
@@ -118,7 +128,7 @@ def generate_kernel_cfg(args):
                 elif value == 'n':
                     kernel_opts += '# CONFIG_%s is not set\n' % prop
 
-    ipinfo_file = os.path.join(scripts_dir, 'data/ipinfo.yaml')
+    ipinfo_file = os.path.join(genmachine_scripts, 'data/ipinfo.yaml')
     plnx_syshw_file = os.path.join(args.output, 'plnx_syshw_data')
     with open(ipinfo_file, 'r') as ipinfo_file_f:
         ipinfo_data = yaml.safe_load(ipinfo_file_f)
@@ -126,9 +136,9 @@ def generate_kernel_cfg(args):
     with open(plnx_syshw_file, 'r') as plnx_syshw_file_f:
         plnx_syshw_data = yaml.safe_load(plnx_syshw_file_f)
     plnx_syshw_file_f.close()
-    processor = get_config_value('CONFIG_SUBSYSTEM_PROCESSOR_', default_cfgfile,
-                                 'choice', '_SELECT=y')
-    slaves_dict = convert_dictto_lowercase(
+    processor = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_PROCESSOR_', system_conffile,
+                                            'choice', '_SELECT=y')
+    slaves_dict = common_utils.convert_dictto_lowercase(
         plnx_syshw_data['processor'][processor]['slaves'])
     slaves = []
     # Get the slave ip_name from plnx_syshw_data which are enabled in design
@@ -160,9 +170,9 @@ def generate_kernel_cfg(args):
                             devtypes.append(ip_type)
 
     for devtype in devtypes:
-        devname = get_config_value('CONFIG_SUBSYSTEM_%s_' % devtype.upper(),
-                                   default_cfgfile, 'choice', '_SELECT=y')
-        devipname = get_ipproperty(devname, default_cfgfile)
+        devname = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_%s_' % devtype.upper(),
+                                              system_conffile, 'choice', '_SELECT=y')
+        devipname = GetIPProperty(devname, system_conffile)
         if not devipname:
             continue
         # Add devtype linux_kernel_properties from sysconfig_kernel.yaml
@@ -199,10 +209,10 @@ def generate_kernel_cfg(args):
                 kernel_opts += 'CONFIG_%s="%s"\n' % (prop, val)
             else:
                 kernel_opts += 'CONFIG_%s=%s\n' % (prop, val)
-    memory = get_config_value('CONFIG_SUBSYSTEM_MEMORY_', default_cfgfile,
-                              'choice', '_SELECT=y')
-    memory_baseaddr = get_config_value('CONFIG_SUBSYSTEM_MEMORY_%s_BASEADDR'
-                                       % memory, default_cfgfile)
+    memory = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_', system_conffile,
+                                         'choice', '_SELECT=y')
+    memory_baseaddr = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_MEMORY_%s_BASEADDR'
+                                                  % memory, system_conffile)
     kernel_opts += 'CONFIG_KERNEL_BASE_ADDR=%s\n' % memory_baseaddr
     kernel_opts += 'CONFIG_BLK_DEV_INITRD=y\n'
     kernel_opts += '# CONFIG_CMDLINE_FORCE is not set\n'
@@ -221,24 +231,24 @@ def generate_kernel_cfg(args):
     auto_linux_file_f.close()
 
 
-def generate_plnx_config(args, machine_conf_file, hw_flow):
-    global default_cfgfile
-    default_cfgfile = os.path.join(args.output, 'config')
-    default_rfsfile = os.path.join(args.output, 'rootfs_config')
-    if not os.path.isfile(default_cfgfile):
-        logger.error('Failed to generate .conf file, Unable to find config'
+def GeneratePlnxConfig(args, machine_conf_file):
+    genmachine_scripts = project_config.GenMachineScriptsPath()
+    hw_flow = args.hw_flow
+    global system_conffile
+    system_conffile = os.path.join(args.output, 'config')
+    rootfs_conffile = os.path.join(args.output, 'rootfs_config')
+    if not os.path.isfile(system_conffile):
+        raise Exception('Failed to generate .conf file, Unable to find config'
                      ' file at: %s' % args.output)
-        sys.exit(255)
-    arch = get_config_value('CONFIG_SUBSYSTEM_ARCH_',
-                            default_cfgfile, 'choice', '=y').lower()
+    arch = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ARCH_',
+                                       system_conffile, 'choice', '=y').lower()
 
     # Create a PetaLinux tool configuration file.
-    global plnx_conf_path
     plnx_conf_file = 'plnxtool.conf'
-    plnx_conf_path = os.path.join(args.output, plnx_conf_file)
+    plnx_conf_path = os.path.join(args.config_dir, plnx_conf_file)
     # Generate the plnxtool.conf if config/rootfs_config changed
-    if validate_hashfile(args, 'SYSTEM_CONF', default_cfgfile, update=False) and \
-            validate_hashfile(args, 'RFS_CONF', default_rfsfile, update=False) and \
+    if common_utils.ValidateHashFile(args.output, 'SYSTEM_CONF', system_conffile, update=False) and \
+            common_utils.ValidateHashFile(args.output, 'RFS_CONF', rootfs_conffile, update=False) and \
             os.path.exists(plnx_conf_path):
         return plnx_conf_file
     logger.info('Generating plnxtool conf file')
@@ -259,23 +269,16 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
     # Variable for constructing plnxtool.conf file.
     override_string = ''
 
-    tmp_dir = get_config_value('CONFIG_TMP_DIR_LOCATION', default_cfgfile)
+    tmp_dir = common_utils.GetConfigValue(
+        'CONFIG_TMP_DIR_LOCATION', system_conffile)
     override_string += '# PetaLinux Tool Auto generated file\n'
     override_string += '\n# Generic variables\n'
-    override_string += generate_mirrors(args, arch)
-    if hw_flow == 'xsct':
-        override_string += '\nMACHINE = "%s"\n' % machine_conf_file
+    override_string += xilinx_mirrors.GenerateMirrors(args, arch)
+    override_string += '\nSIGGEN_UNLOCKED_RECIPES += "busybox"\n'
+    override_string += '\nMACHINE = "%s"\n' % machine_conf_file.lower()
 
     if tmp_dir:
         override_string += 'TMPDIR = "%s"\n' % tmp_dir
-        if hw_flow == 'sdt':
-            override_string += 'BASE_TMPDIR = "%s-multiconfig"\n' % tmp_dir
-    if hw_flow == 'sdt':
-        bbmultitargets = get_config_value('CONFIG_YOCTO_BBMC_', default_cfgfile,
-                                          'choicelist', '=y').lower().replace('_', '-')
-        override_string += '# targets to build the multi artifacts\n'
-        override_string += 'BBMULTICONFIG = "%s"\n' % bbmultitargets
-
     # AUTO add local uninative tarball if exists, to support no network case.
     # CONFIG_SITE variable exported in case of extensible SDK only
     import glob
@@ -307,33 +310,33 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
                             else:
                                 override_string += '%s\n' % line
                     file_data.close()
-    bb_no_network = get_config_value('CONFIG_YOCTO_BB_NO_NETWORK',
-                                     default_cfgfile)
+    bb_no_network = common_utils.GetConfigValue('CONFIG_YOCTO_BB_NO_NETWORK',
+                                                system_conffile)
     if bb_no_network:
         override_string += 'BB_NO_NETWORK = "1"\n'
-    bb_num_threads = get_config_value('CONFIG_YOCTO_BB_NUMBER_THREADS',
-                                      default_cfgfile)
+    bb_num_threads = common_utils.GetConfigValue('CONFIG_YOCTO_BB_NUMBER_THREADS',
+                                                 system_conffile)
     if bb_num_threads:
         override_string += 'BB_NUMBER_THREADS = "%s"\n' % bb_num_threads
-    bb_num_parse_threads = get_config_value('CONFIG_YOCTO_BB_NUMBER_PARSE_THREADS',
-                                            default_cfgfile)
+    bb_num_parse_threads = common_utils.GetConfigValue('CONFIG_YOCTO_BB_NUMBER_PARSE_THREADS',
+                                                       system_conffile)
     if bb_num_parse_threads:
         override_string += 'BB_NUMBER_PARSE_THREADS = "%s"\n' % bb_num_parse_threads
 
-    parallel_make = get_config_value('CONFIG_YOCTO_PARALLEL_MAKE',
-                                     default_cfgfile)
+    parallel_make = common_utils.GetConfigValue('CONFIG_YOCTO_PARALLEL_MAKE',
+                                                system_conffile)
     if parallel_make:
         override_string += 'PARALLEL_MAKE = "-j %s"\n' % parallel_make
-
 
     override_string += 'PACKAGE_CLASSES = "package_rpm"\n'
     override_string += 'DL_DIR = "${TOPDIR}/downloads"\n'
 
-    host_name = get_config_value('CONFIG_SUBSYSTEM_HOSTNAME', default_cfgfile)
-    product_name = get_config_value(
-        'CONFIG_SUBSYSTEM_PRODUCT', default_cfgfile)
-    firmware_version = get_config_value('CONFIG_SUBSYSTEM_FW_VERSION',
-                                        default_cfgfile)
+    host_name = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_HOSTNAME', system_conffile)
+    product_name = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_PRODUCT', system_conffile)
+    firmware_version = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_FW_VERSION',
+                                                   system_conffile)
 
     override_string += 'SSTATE_DIR = "${TOPDIR}/sstate-cache"\n'
     override_string += 'hostname:pn-base-files = "%s"\n' % host_name
@@ -342,101 +345,97 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
     override_string += 'DISTRO_VERSION:pn-base-files-plnx = "%s"\n' \
                        % firmware_version
 
-    if args.xsct_tool and hw_flow == 'xsct':
+    if hasattr(args, 'xsct_tool') and args.xsct_tool and hw_flow == 'xsct':
         override_string += '\n# SDK path variables\n'
         override_string += 'XILINX_SDK_TOOLCHAIN = "%s"\n' % args.xsct_tool
         override_string += 'USE_XSCT_TARBALL = "0"\n'
 
     override_string += '\n# PetaLinux tool linux-xlnx variables\n'
-    override_string += add_remote_sources('linux-xlnx', 'LINUX__KERNEL')
-    override_string += add_external_sources('linux-xlnx', 'LINUX__KERNEL')
+    override_string += AddRemoteSources('linux-xlnx', 'LINUX__KERNEL')
+    override_string += AddExternalSources('linux-xlnx', 'LINUX__KERNEL')
     override_string += 'RRECOMMENDS:${KERNEL_PACKAGE_NAME}-base = ""\n'
-    kernel_config = get_config_value('CONFIG_SUBSYSTEM_LINUX_CONFIG_TARGET',
-                                     default_cfgfile)
+    kernel_config = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_LINUX_CONFIG_TARGET',
+                                                system_conffile)
     if kernel_config and kernel_config.lower() != 'auto':
         override_string += 'KBUILD_DEFCONFIG:%s = "%s"\n' % (
             soc_family, kernel_config)
-    kernel_autoconfig = get_config_value('CONFIG_SUBSYSTEM_AUTOCONFIG_KERNEL',
-                                         default_cfgfile)
+    kernel_autoconfig = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_AUTOCONFIG_KERNEL',
+                                                    system_conffile)
 
     # Generate linux-xlnx fragment config for microblaze based on xsa.
     if soc_family == 'microblaze':
         if kernel_autoconfig:
             override_string += 'KERNEL_AUTO_CONFIG:pn-linux-xlnx = "1"\n'
-            generate_kernel_cfg(args)
+            GenerateKernelCfg(args)
 
     override_string += '\n# PetaLinux tool device-tree variables\n'
-    autoconfig_dt = get_config_value('CONFIG_SUBSYSTEM_AUTOCONFIG_DEVICE__TREE',
-                                     default_cfgfile)
+    autoconfig_dt = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_AUTOCONFIG_DEVICE__TREE',
+                                                system_conffile)
     if not autoconfig_dt:
         override_string += 'CONFIG_DISABLE:pn-device-tree = "1"\n'
-    dt_xsct_ws = get_config_value('CONFIG_SUBSYSTEM_DT_XSCT_WORKSPACE',
-                                  default_cfgfile)
+    dt_xsct_ws = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_DT_XSCT_WORKSPACE',
+                                             system_conffile)
     if dt_xsct_ws:
         override_string += 'XSCTH_WS:pn-device-tree = "%s"\n' % dt_xsct_ws
 
-    dt_overlay = get_config_value('CONFIG_SUBSYSTEM_DTB_OVERLAY',
-                                  default_cfgfile)
+    dt_overlay = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_DTB_OVERLAY',
+                                             system_conffile)
     if dt_overlay:
         override_string += 'YAML_ENABLE_DT_OVERLAY:pn-device-tree = "1"\n'
-    dt_no_alias = get_config_value('CONFIG_SUBSYSTEM_ENABLE_NO_ALIAS',
-                                   default_cfgfile)
+    dt_no_alias = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_NO_ALIAS',
+                                              system_conffile)
     if dt_no_alias:
         override_string += 'YAML_ENABLE_NO_ALIAS = "1"\n'
     # Generate dtg/system-top.dts aliases in final dtb instead of using it from board.dts /DT machine file
-    only_dtg_alias = get_config_value('CONFIG_SUBSYSTEM_ENABLE_DTG_ALIAS',
-                                      default_cfgfile)
+    only_dtg_alias = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_DTG_ALIAS',
+                                                 system_conffile)
     if only_dtg_alias:
         override_string += 'YAML_ENABLE_DTG_ALIAS = "1"\n'
 
-    dt_no_labels = get_config_value('CONFIG_SUBSYSTEM_ENABLE_NO_LABELS',
-                                    default_cfgfile)
+    dt_no_labels = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_NO_LABELS',
+                                               system_conffile)
     if dt_no_labels:
         override_string += 'YAML_ENABLE_NO_LABELS = "1"\n'
 
-    dt_verbose = get_config_value('CONFIG_SUBSYSTEM_ENABLE_DT_VERBOSE',
-                                  default_cfgfile)
+    dt_verbose = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_DT_VERBOSE',
+                                             system_conffile)
     if dt_verbose:
         override_string += 'YAML_ENABLE_DT_VERBOSE = "1"\n'
-    extra_dt_files = get_config_value('CONFIG_SUBSYSTEM_EXTRA_DT_FILES',
-                                      default_cfgfile)
+    extra_dt_files = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_EXTRA_DT_FILES',
+                                                 system_conffile)
     if autoconfig_dt:
         yocto_override = ''
         if hw_flow == 'sdt':
             yocto_override = ':linux'
         override_string += 'EXTRA_DT_FILES%s = "%s"\n' % (
             yocto_override, extra_dt_files)
-    dt_remove_pl = get_config_value('CONFIG_SUBSYSTEM_REMOVE_PL_DTB',
-                                    default_cfgfile)
+    dt_remove_pl = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_REMOVE_PL_DTB',
+                                               system_conffile)
     if dt_remove_pl:
         override_string += 'YAML_REMOVE_PL_DT:pn-device-tree = "1"\n'
-    dt_include_dir = get_config_value('CONFIG_SUBSYSTEM_DEVICE_TREE_INCLUDE_DIR',
-                                      default_cfgfile)
-    dt_manual_include = get_config_value('CONFIG_SUBSYSTEM_DEVICE_TREE_MANUAL_INCLUDE',
-                                         default_cfgfile)
+    dt_include_dir = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_DEVICE_TREE_INCLUDE_DIR',
+                                                 system_conffile)
+    dt_manual_include = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_DEVICE_TREE_MANUAL_INCLUDE',
+                                                    system_conffile)
     if dt_manual_include:
         override_string += 'KERNEL_INCLUDE:append:pn-device-tree = " %s"\n' \
                            % dt_include_dir
-    dt_openamp_dtsi = get_config_value('CONFIG_SUBSYSTEM_ENABLE_OPENAMP_DTSI',
-                                       default_cfgfile)
-    if dt_openamp_dtsi:
-        override_string += 'ENABLE_OPENAMP_DTSI = "1"\n'
 
-    dt_xenhw_dtsi = get_config_value('CONFIG_SUBSYSTEM_ENABLE_XEN_HW_DTSI',
-                                     default_cfgfile)
+    dt_xenhw_dtsi = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_XEN_HW_DTSI',
+                                                system_conffile)
     if dt_xenhw_dtsi:
         override_string += 'ENABLE_XEN_DTSI = "1"\n'
 
-    dt_xenqemu_dtsi = get_config_value('CONFIG_SUBSYSTEM_ENABLE_XEN_QEMU_DTSI',
-                                       default_cfgfile)
+    dt_xenqemu_dtsi = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ENABLE_XEN_QEMU_DTSI',
+                                                  system_conffile)
     if dt_xenqemu_dtsi:
         override_string += 'ENABLE_XEN_QEMU_DTSI = "1"\n'
 
     override_string += '\n# PetaLinux tool U-boot variables\n'
-    override_string += add_remote_sources('u-boot-xlnx', 'U__BOOT')
-    override_string += add_external_sources('u-boot-xlnx', 'U__BOOT')
-    uboot_autoconfig = get_config_value('CONFIG_SUBSYSTEM_AUTOCONFIG_U__BOOT',
-                                        default_cfgfile)
+    override_string += AddRemoteSources('u-boot-xlnx', 'U__BOOT')
+    override_string += AddExternalSources('u-boot-xlnx', 'U__BOOT')
+    uboot_autoconfig = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_AUTOCONFIG_U__BOOT',
+                                                   system_conffile)
     if soc_family == 'microblaze':
         if uboot_autoconfig:
             override_string += 'U_BOOT_AUTO_CONFIG:pn-u-boot-xlnx = "1"\n'
@@ -445,60 +444,60 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
                 os.makedirs(auto_uboot_dir)
             logger.info('Generating u-boot configuration files')
             cmd = 'xsct -sdx -nodisp %s/petalinux_hsm_bridge.tcl -c %s -a u-boot_bsp -hdf %s -o %s -data %s' % \
-                (scripts_dir, default_cfgfile, os.path.abspath(args.hw_file),
-                    auto_uboot_dir, os.path.join(scripts_dir, 'data'))
-            run_cmd(cmd, args.output, args.logfile)
+                (genmachine_scripts, system_conffile, os.path.abspath(args.hw_file),
+                    auto_uboot_dir, os.path.join(genmachine_scripts, 'data'))
+            common_utils.RunCmd(cmd, args.output, shell=True)
 
     if arch == 'aarch64':
         override_string += '\n# PetaLinux tool Arm-trusted-firmware variables\n'
-        override_string += add_remote_sources(
-            'arm-trusted-firmware', 'TRUSTED__FIRMWARE__ARM')
-        override_string += add_external_sources(
-            'arm-trusted-firmware', 'TRUSTED__FIRMWARE__ARM')
-        atf_debug = get_config_value(
-            'CONFIG_SUBSYSTEM_TF-A_DEBUG', default_cfgfile)
+        override_string += AddRemoteSources(
+            'trusted-firmware-a', 'TRUSTED__FIRMWARE__ARM')
+        override_string += AddExternalSources(
+            'trusted-firmware-a', 'TRUSTED__FIRMWARE__ARM')
+        atf_debug = common_utils.GetConfigValue(
+            'CONFIG_SUBSYSTEM_TF-A_DEBUG', system_conffile)
         if atf_debug:
             override_string += 'DEBUG_ATF = "1"\n'
 
     if soc_family == 'versal':
         override_string += '\n# PetaLinux tool PLM variables\n'
-        override_string += add_remote_sources('plm-firmware', 'PLM')
-        override_string += add_external_sources('plm-firmware', 'PLM')
-        override_string += add_remote_sources('psm-firmware', 'PSM__FIRMWARE')
-        override_string += add_external_sources(
+        override_string += AddRemoteSources('plm-firmware', 'PLM')
+        override_string += AddExternalSources('plm-firmware', 'PLM')
+        override_string += AddRemoteSources('psm-firmware', 'PSM__FIRMWARE')
+        override_string += AddExternalSources(
             'psm-firmware', 'PSM__FIRMWARE')
 
     if soc_family in ['zynqmp', 'zynq']:
-        fsbl_bspcompiler_flags = get_config_value('CONFIG_SUBSYSTEM_FSBL_BSPCOMPILER_FLAGS',
-                                                  default_cfgfile)
-        fsbl_bspcompiler_flagset = get_config_value('CONFIG_SUBSYSTEM_FSBL_BSPCOMPILER_FLAGSSET',
-                                                    default_cfgfile)
+        fsbl_bspcompiler_flags = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_FSBL_BSPCOMPILER_FLAGS',
+                                                             system_conffile)
+        fsbl_bspcompiler_flagset = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_FSBL_BSPCOMPILER_FLAGSSET',
+                                                               system_conffile)
         override_string += '\n# PetaLinux tool FSBL variables\n'
         if fsbl_bspcompiler_flagset:
             override_string += 'YAML_BSP_COMPILER_FLAGS:append:pn-fsbl-firmware = " %s"' \
                                % fsbl_bspcompiler_flags
-        fsbl_compiler_extra_flags = get_config_value('CONFIG_SUBSYSTEM_FSBL_COMPILER_EXTRA_FLAGS',
-                                                     default_cfgfile)
+        fsbl_compiler_extra_flags = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_FSBL_COMPILER_EXTRA_FLAGS',
+                                                                system_conffile)
         override_string += 'YAML_COMPILER_FLAGS:append:pn-fsbl-firmware = " %s"\n' \
                            % fsbl_compiler_extra_flags
 
     if soc_family in ['zynqmp']:
         override_string += '\n# PetaLinux tool PMUFW variables\n'
-        pmufw_bspcompiler_flags = get_config_value('CONFIG_SUBSYSTEM_PMUFW_BSPCOMPILER_FLAGS',
-                                                   default_cfgfile)
-        pmufw_bspcompiler_flagset = get_config_value('CONFIG_SUBSYSTEM_PMUFW_BSPCOMPILER_FLAGSSET',
-                                                     default_cfgfile)
+        pmufw_bspcompiler_flags = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_PMUFW_BSPCOMPILER_FLAGS',
+                                                              system_conffile)
+        pmufw_bspcompiler_flagset = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_PMUFW_BSPCOMPILER_FLAGSSET',
+                                                                system_conffile)
         if pmufw_bspcompiler_flagset:
             override_string += 'YAML_BSP_COMPILER_FLAGS:append:pn-pmu-firmware = " %s"' \
                 % pmufw_bspcompiler_flags
         override_string += '\n'
 
-    is_uboot_dtb = get_config_value('CONFIG_SUBSYSTEM_UBOOT_EXT_DTB',
-                                    default_cfgfile)
-    ubootdtb_dts_path = get_config_value('CONFIG_UBOOT_EXT_DTB_FROM_DTS',
-                                         default_cfgfile)
-    ubootdtb_packagename = get_config_value('CONFIG_UBOOT_DTB_PACKAGE_NAME',
-                                            default_cfgfile)
+    is_uboot_dtb = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_EXT_DTB',
+                                               system_conffile)
+    ubootdtb_dts_path = common_utils.GetConfigValue('CONFIG_UBOOT_EXT_DTB_FROM_DTS',
+                                                    system_conffile)
+    ubootdtb_packagename = common_utils.GetConfigValue('CONFIG_UBOOT_DTB_PACKAGE_NAME',
+                                                       system_conffile)
     if is_uboot_dtb == 'y':
         override_string += 'PACKAGE_UBOOT_DTB_NAME = "%s"\n' % ubootdtb_packagename
         override_string += 'PACKAGES_LIST:append = " uboot-device-tree"'
@@ -529,113 +528,113 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
         override_string += 'SYMLINK_FILES:%s = "%s:%s"\n' \
             % (soc_family, 'system-default.dtb', 'system.dtb')
         override_string += 'DEVICE_TREE_NAME = "system.dtb"\n'
-    override_string += 'BOOTMODE = "generic"\n'
+
+    ramdisk_image = 'rootfs.cpio.gz.u-boot'
+    if (hw_flow == 'sdt') and (dt_xenhw_dtsi or dt_xenqemu_dtsi):
+        override_string += 'BOOTMODE = "xen"\n'
+        override_string += 'ENABLE_XEN_UBOOT_SCR = "1"\n'
+        ramdisk_image = 'rootfs.cpio.gz'
+    else:
+        override_string += 'BOOTMODE = "generic"\n'
+
     override_string += 'BOOTFILE_EXT = ""\n'
     # Use MACHINE as override due to u-boot-xlnx-scr has $soc_family-$soc_variant overrides
-    override_string += 'RAMDISK_IMAGE:${MACHINE} = "rootfs.cpio.gz.u-boot"\n'
+    override_string += 'RAMDISK_IMAGE:${MACHINE} = "%s"\n' % ramdisk_image
     override_string += 'RAMDISK_IMAGE1:${MACHINE} = "ramdisk.cpio.gz.u-boot"\n'
     override_string += 'KERNEL_IMAGE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_KERNEL_IMAGE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_KERNEL_IMAGE',
+                                      system_conffile)
     override_string += 'DEVICETREE_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_DEVICETREE_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_DEVICETREE_OFFSET',
+                                      system_conffile)
     override_string += 'KERNEL_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_KERNEL_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_KERNEL_OFFSET',
+                                      system_conffile)
     override_string += 'RAMDISK_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_RAMDISK_IMAGE_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_RAMDISK_IMAGE_OFFSET',
+                                      system_conffile)
     override_string += 'QSPI_KERNEL_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_KERNEL_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_KERNEL_OFFSET',
+                                      system_conffile)
     override_string += 'QSPI_KERNEL_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_KERNEL_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_KERNEL_SIZE',
+                                      system_conffile)
     override_string += 'QSPI_RAMDISK_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_RAMDISK_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_RAMDISK_OFFSET',
+                                      system_conffile)
     override_string += 'QSPI_RAMDISK_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_RAMDISK_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_RAMDISK_SIZE',
+                                      system_conffile)
     override_string += 'QSPI_FIT_IMAGE_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_FIT_IMAGE_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_FIT_IMAGE_OFFSET',
+                                      system_conffile)
     override_string += 'QSPI_FIT_IMAGE_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_QSPI_FIT_IMAGE_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_QSPI_FIT_IMAGE_SIZE',
+                                      system_conffile)
     override_string += 'NAND_KERNEL_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_KERNEL_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_KERNEL_OFFSET',
+                                      system_conffile)
     override_string += 'NAND_KERNEL_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_KERNEL_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_KERNEL_SIZE',
+                                      system_conffile)
     override_string += 'NAND_RAMDISK_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_RAMDISK_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_RAMDISK_OFFSET',
+                                      system_conffile)
     override_string += 'NAND_RAMDISK_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_RAMDISK_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_RAMDISK_SIZE',
+                                      system_conffile)
     override_string += 'NAND_FIT_IMAGE_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_FIT_IMAGE_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_FIT_IMAGE_OFFSET',
+                                      system_conffile)
     override_string += 'NAND_FIT_IMAGE_SIZE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_NAND_FIT_IMAGE_SIZE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_NAND_FIT_IMAGE_SIZE',
+                                      system_conffile)
     override_string += 'FIT_IMAGE:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_FIT_IMAGE',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_FIT_IMAGE',
+                                      system_conffile)
     override_string += 'FIT_IMAGE_OFFSET:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_FIT_IMAGE_OFFSET',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_FIT_IMAGE_OFFSET',
+                                      system_conffile)
     override_string += 'PRE_BOOTENV:${MACHINE} = "%s"\n' \
-        % get_config_value('CONFIG_SUBSYSTEM_UBOOT_PRE_BOOTENV',
-                           default_cfgfile)
+        % common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_PRE_BOOTENV',
+                                      system_conffile)
 
-    rootfs_jffs2 = get_config_value('CONFIG_SUBSYSTEM_ROOTFS_JFFS2',
-                                    default_cfgfile)
-    if rootfs_jffs2:
-        jffs2_size = get_config_value('CONFIG_SUBSYSTEM_JFFS2_ERASE_SIZE_',
-                                      default_cfgfile, 'choice')
-        jffs2_size = hex(int(jffs2_size) * 1024)
-        override_string += '\n#jffs2 variables\n'
-        override_string += 'JFFS2_ERASEBLOCK = "%s"\n' % jffs2_size
 
-    rootfs_ubifs = get_config_value('CONFIG_SUBSYSTEM_ROOTFS_UBIFS',
-                                    default_cfgfile)
+    rootfs_ubifs = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ROOTFS_UBIFS',
+                                               system_conffile)
     if rootfs_ubifs:
         override_string += '\n#ubi/ubifs variables\n'
-        ubi_mubifs_args = get_config_value('CONFIG_SUBSYSTEM_UBI_MKUBIFS_ARGS',
-                                           default_cfgfile)
-        ubi_ubinize_args = get_config_value('CONFIG_SUBSYSTEM_UBI_UBINIZE_ARGS',
-                                            default_cfgfile)
-        ubi_part_name = get_config_value('CONFIG_SUBSYSTEM_UBI_PART_NAME',
-                                         default_cfgfile)
+        ubi_mubifs_args = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBI_MKUBIFS_ARGS',
+                                                      system_conffile)
+        ubi_ubinize_args = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBI_UBINIZE_ARGS',
+                                                       system_conffile)
+        ubi_part_name = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBI_PART_NAME',
+                                                    system_conffile)
         override_string += 'MKUBIFS_ARGS = "%s"\n' % ubi_mubifs_args
         override_string += 'UBINIZE_ARGS = "%s"\n' % ubi_ubinize_args
         override_string += 'UBI_VOLNAME = "%s"\n' % ubi_part_name
 
-    provides_name = get_config_value('CONFIG_SUBSYSTEM_INITRAMFS_IMAGE_NAME',
-                                     default_cfgfile)
-    rootfs_initrd = get_config_value('CONFIG_SUBSYSTEM_ROOTFS_INITRD',
-                                     default_cfgfile)
-    xen_enabled = get_config_value(
-        'CONFIG_', default_rfsfile, 'asterisk', '.+xen.+')
+    provides_name = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_INITRAMFS_IMAGE_NAME',
+                                                system_conffile)
+    rootfs_initrd = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ROOTFS_INITRD',
+                                                system_conffile)
+    xen_enabled = common_utils.GetConfigValue(
+        'CONFIG_', rootfs_conffile, 'asterisk', '.+xen.+')
     if xen_enabled:
         override_string += '\nIMAGE_PLNX_XEN_DEPLOY = "1"\n'
 
     if rootfs_initrd:
         override_string += '\nINITRAMFS_IMAGE = "%s"\n' % provides_name
 
-    rootfs_initramfs = get_config_value('CONFIG_SUBSYSTEM_ROOTFS_INITRAMFS',
-                                        default_cfgfile)
+    rootfs_initramfs = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_ROOTFS_INITRAMFS',
+                                                   system_conffile)
     if rootfs_initramfs:
         override_string += '\nINITRAMFS_IMAGE_BUNDLE = "1"\n'
         override_string += 'INITRAMFS_IMAGE = "%s"\n' % provides_name
         override_string += 'INITRAMFS_MAXSIZE = "524288"\n'
 
-    rootfs_types = get_config_value('CONFIG_SUBSYSTEM_RFS_FORMATS',
-                                    default_cfgfile)
+    rootfs_types = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_RFS_FORMATS',
+                                               system_conffile)
     if rootfs_types:
         override_string += 'IMAGE_FSTYPES:%s = "%s"\n' % (
             soc_family, rootfs_types)
@@ -654,47 +653,47 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
                        'virtual/elfrealloc', 'u-boot-xlnx-scr'],
         'zynq': ['virtual/bootloader', 'virtual/fsbl', 'u-boot-xlnx-scr'],
         'zynqmp': ['virtual/bootloader', 'virtual/fsbl', 'virtual/pmu-firmware',
-                   'arm-trusted-firmware', 'qemu-devicetrees', 'pmu-rom-native',
+                   'virtual/arm-trusted-firmware', 'qemu-devicetrees-native', 'pmu-rom-native',
                    'u-boot-xlnx-scr'],
         'versal': ['virtual/bootloader', 'virtual/psm-firmware', 'virtual/plm',
-                   'arm-trusted-firmware', 'u-boot-xlnx-scr',
-                   'qemu-devicetrees', 'extract-cdo'],
+                   'virtual/arm-trusted-firmware', 'u-boot-xlnx-scr',
+                   'qemu-devicetrees-native', 'extract-cdo'],
     }
     imagedepends_remove = ['virtual/boot-bin']
-    is_imgsel = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_IMG_SEL',
-                                 default_cfgfile)
-    is_uboot_dtb = get_config_value('CONFIG_SUBSYSTEM_UBOOT_EXT_DTB',
-                                    default_cfgfile)
+    is_imgsel = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_IMG_SEL',
+                                            system_conffile)
+    is_uboot_dtb = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_UBOOT_EXT_DTB',
+                                               system_conffile)
     if is_imgsel:
         imagedepends[soc_family].append('virtual/imgsel')
     if is_uboot_dtb:
         imagedepends[soc_family].append('virtual/uboot-dtb')
 
-    is_fsboot = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_BOOTLOADER_NAME_FS__BOOT',
-                                 default_cfgfile)
+    is_fsboot = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_BOOTLOADER_NAME_FS__BOOT',
+                                            system_conffile)
     if not is_fsboot and 'virtual/fsboot' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/fsboot')
         imagedepends_remove.append('virtual/fsboot')
     if not is_fsboot and 'virtual/elfrealloc' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/elfrealloc')
         imagedepends_remove.append('virtual/elfrealloc')
-    is_fsbl = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_BOOTLOADER_AUTO_FSBL',
-                               default_cfgfile)
+    is_fsbl = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_BOOTLOADER_AUTO_FSBL',
+                                          system_conffile)
     if not is_fsbl and 'virtual/fsbl' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/fsbl')
         imagedepends_remove.append('virtual/fsbl')
-    is_pmufw = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_PMU_FIRMWARE',
-                                default_cfgfile)
+    is_pmufw = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_PMU_FIRMWARE',
+                                           system_conffile)
     if not is_pmufw and 'virtual/pmu-firmware' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/pmu-firmware')
         imagedepends_remove.append('virtual/pmu-firmware')
-    is_plm = get_config_value(
-        'CONFIG_SUBSYSTEM_COMPONENT_PLM', default_cfgfile)
+    is_plm = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_COMPONENT_PLM', system_conffile)
     if not is_plm and 'virtual/plm' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/plm')
         imagedepends_remove.append('virtual/plm')
-    is_psmfw = get_config_value('CONFIG_SUBSYSTEM_COMPONENT_PSM_FIRMWARE',
-                                default_cfgfile)
+    is_psmfw = common_utils.GetConfigValue('CONFIG_SUBSYSTEM_COMPONENT_PSM_FIRMWARE',
+                                           system_conffile)
     if not is_psmfw and 'virtual/psm-firmware' in imagedepends[soc_family]:
         imagedepends[soc_family].remove('virtual/psm-firmware')
         imagedepends_remove.append('virtual/psm-firmware')
@@ -707,8 +706,8 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
     if is_imgsel:
         override_string += 'PACKAGES_LIST:append = " imgsel"'
 
-    pdi_name = get_config_value(
-        'CONFIG_SUBSYSTEM_PDI_FILENAME', default_cfgfile)
+    pdi_name = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_PDI_FILENAME', system_conffile)
     if pdi_name:
         override_string += 'BASE_PDI_NAME = "%s"\n' % pdi_name
 
@@ -718,27 +717,27 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
 
     override_string += '\n# deploy class variables\n'
     override_string += 'INHERIT += "plnx-deploy"\n'
-    plnx_deploydir = get_config_value(
-        'CONFIG_PLNX_IMAGES_LOCATION', default_cfgfile)
+    plnx_deploydir = common_utils.GetConfigValue(
+        'CONFIG_PLNX_IMAGES_LOCATION', system_conffile)
     if plnx_deploydir:
         override_string += 'PLNX_DEPLOY_DIR = "%s"\n' % plnx_deploydir
-    mc_plnx_deploydir = get_config_value(
-        'CONFIG_MC_PLNX_IMAGES_LOCATION', default_cfgfile)
+    mc_plnx_deploydir = common_utils.GetConfigValue(
+        'CONFIG_MC_PLNX_IMAGES_LOCATION', system_conffile)
     if mc_plnx_deploydir:
         override_string += 'MC_PLNX_DEPLOY_DIR = "%s"\n' % mc_plnx_deploydir
-    dtb_deployname = get_config_value(
-        'CONFIG_SUBSYSTEM_IMAGES_ADVANCED_AUTOCONFIG_DTB_IMAGE_NAME', default_cfgfile)
+    dtb_deployname = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_IMAGES_ADVANCED_AUTOCONFIG_DTB_IMAGE_NAME', system_conffile)
     override_string += 'PACKAGE_DTB_NAME = "%s"\n' % dtb_deployname
-    fit_deployname = get_config_value(
-        'CONFIG_SUBSYSTEM_UIMAGE_NAME', default_cfgfile)
+    fit_deployname = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_UIMAGE_NAME', system_conffile)
     override_string += 'PACKAGE_FITIMG_NAME = "%s"\n' % fit_deployname
 
     # Get design name from xsa
     design_name = ''
     if 'hw_design_name' in plnx_syshw_data.keys():
         design_name = plnx_syshw_data['hw_design_name']
-    is_overlay = get_config_value(
-        'CONFIG_SUBSYSTEM_DTB_OVERLAY', default_cfgfile)
+    is_overlay = common_utils.GetConfigValue(
+        'CONFIG_SUBSYSTEM_DTB_OVERLAY', system_conffile)
     bitfile_name = 'system.bit'
     if is_overlay == 'y' and design_name:
         bitfile_name = design_name + '.bit'
@@ -759,15 +758,16 @@ def generate_plnx_config(args, machine_conf_file, hw_flow):
     override_conf_f.close()
 
     # Rootfs configs
-    rfsconfig_py = os.path.join(scripts_dir,
+    rfsconfig_py = os.path.join(genmachine_scripts,
                                 'rootfsconfigs/rootfs_config.py')
-    default_rfsfile = os.path.join(args.output, 'rootfs_config')
+    rootfs_conffile = os.path.join(args.output, 'rootfs_config')
     cmd = 'python3 %s --update_cfg %s %s %s' \
-        % (rfsconfig_py, default_rfsfile,
+        % (rfsconfig_py, rootfs_conffile,
            plnx_conf_path, soc_family)
-    run_cmd(cmd, args.output, args.logfile)
+    common_utils.RunCmd(cmd, args.output, shell=True)
 
     # Update config and rootfs_config file hash if changed
-    validate_hashfile(args, 'SYSTEM_CONF', default_cfgfile)
-    validate_hashfile(args, 'RFS_CONF', default_rfsfile)
+    # This should call end of the script
+    common_utils.ValidateHashFile(args.output, 'SYSTEM_CONF', system_conffile)
+    common_utils.ValidateHashFile(args.output, 'RFS_CONF', rootfs_conffile)
     return plnx_conf_file
